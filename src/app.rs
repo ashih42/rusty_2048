@@ -1,0 +1,328 @@
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Clear, Paragraph},
+};
+use std::io::{self, Stdout};
+
+use crate::{grid::Grid, move_direction::MoveDirection};
+
+#[derive(Debug, PartialEq)]
+enum GameState {
+    InPlay,
+    Won,
+    Lost,
+}
+
+#[derive(Debug)]
+pub struct App {
+    should_show_grid: bool,
+    should_exit: bool,
+    game_state: GameState,
+    current_turn: u16,
+    current_score: u16,
+    best_score: u16,
+    winning_target: u16,
+    grid: Grid,
+}
+
+impl App {
+    pub fn new(num_rows: usize, num_cols: usize) -> Self {
+        let mut grid = Grid::new(num_rows, num_cols);
+        grid.spawn_random_tile_at_random_location();
+
+        Self {
+            should_show_grid: true,
+            should_exit: false,
+            game_state: GameState::InPlay,
+            current_turn: 1,
+            current_score: 0,
+            best_score: 0,
+            winning_target: 2048,
+            grid,
+        }
+    }
+
+    fn exit(&mut self) {
+        self.should_exit = true;
+    }
+
+    fn toggle_grid(&mut self) {
+        self.should_show_grid = !self.should_show_grid;
+    }
+
+    /// Reset to an initial state for a new game.
+    fn restart(&mut self) {
+        self.game_state = GameState::InPlay;
+        self.current_turn = 1;
+        self.current_score = 0;
+
+        self.grid.clear();
+        self.grid.spawn_random_tile_at_random_location();
+    }
+
+    /// This is the big logic update function, called after any gameplay event
+    /// that may affect the game state.
+    fn tick(&mut self, direction: MoveDirection) {
+        if matches!(self.game_state, GameState::Won | GameState::Lost) {
+            return;
+        }
+
+        let score = self.grid.handle_move(direction);
+        self.update_scores(score);
+        self.current_turn += 1;
+
+        if rand::random() {
+            self.grid.spawn_random_tile_at_random_location();
+        }
+
+        self.check_if_won();
+        self.check_if_lost();
+    }
+
+    /// Update both `current_score` and `best_score`.
+    fn update_scores(&mut self, score: i16) {
+        let updated_score = (self.current_score as i16) + score;
+        let updated_score = updated_score.clamp(0, i16::MAX);
+        self.current_score = updated_score as u16;
+
+        if self.current_score > self.best_score {
+            self.best_score = self.current_score;
+        }
+    }
+
+    fn check_if_won(&mut self) {
+        if self.grid.contains_value(self.winning_target) {
+            self.game_state = GameState::Won;
+        }
+    }
+
+    fn check_if_lost(&mut self) {
+        if self.grid.is_dead() {
+            self.game_state = GameState::Lost;
+        }
+    }
+}
+
+/// These operations use crossterm to listen for input events.
+impl App {
+    fn handle_events(&mut self) -> io::Result<()> {
+        // Note: This is BLOCKING until an event occurs.
+        // This is fine for now, but this will need to be non-blocking for
+        // future animations or AI auto-play features
+        match event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                self.handle_key_event(key_event)
+            }
+            _ => (),
+        };
+        Ok(())
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('r') => self.restart(),
+            KeyCode::Char('g') => self.toggle_grid(),
+            KeyCode::Char('w') | KeyCode::Up => self.tick(MoveDirection::Up),
+            KeyCode::Char('s') | KeyCode::Down => self.tick(MoveDirection::Down),
+            KeyCode::Char('a') | KeyCode::Left => self.tick(MoveDirection::Left),
+            KeyCode::Char('d') | KeyCode::Right => self.tick(MoveDirection::Right),
+            _ => (),
+        }
+    }
+}
+
+/// These operations use ratatui to update the view on the terminal.
+impl App {
+    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
+        while !self.should_exit {
+            terminal.draw(|frame| self.render(frame))?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn render(&self, frame: &mut Frame) {
+        // 1. Split screen into a top banner and a bottom grid area.
+        let (total_area, banner_area, grid_area) = self.split_area(frame);
+
+        // 2. Render the top banner.
+        self.render_banner(frame, banner_area);
+
+        // 3. Render the grid inside the remaining bottom area.
+        self.render_grid(frame, grid_area);
+
+        // 4. Render the game-over popup box overlay.
+        self.render_game_over_popup(frame, total_area);
+    }
+
+    fn split_area(&self, frame: &Frame) -> (Rect, Rect, Rect) {
+        let total_area = frame.area();
+
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),       // Fixed height banner
+                Constraint::Percentage(100), // Rest of the screen for the grid
+            ])
+            .split(total_area);
+
+        let banner_area = main_chunks[0];
+        let grid_area = main_chunks[1];
+
+        (total_area, banner_area, grid_area)
+    }
+
+    fn render_banner(&self, frame: &mut Frame, banner_area: Rect) {
+        let banner_text = format!(
+            " Turn: {}    |    Score: {}    |    High Score: {} ",
+            self.current_turn, self.current_score, self.best_score,
+        );
+
+        let banner_widget = Paragraph::new(banner_text)
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Yellow))
+                    .title(" 2048 TUI "),
+            )
+            .style(Style::default().fg(Color::Yellow).bold());
+        frame.render_widget(banner_widget, banner_area);
+    }
+
+    fn render_grid(&self, frame: &mut Frame, grid_area: Rect) {
+        let (num_rows, num_cols) = (self.grid.num_rows, self.grid.num_cols);
+
+        let row_constraints = (0..num_rows).map(|_| Constraint::Ratio(1, num_rows as u32));
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(row_constraints)
+            .split(grid_area);
+
+        for row_idx in 0..num_rows {
+            let col_constraints = (0..num_cols).map(|_| Constraint::Ratio(1, num_cols as u32));
+            let columns = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(col_constraints)
+                .split(rows[row_idx]);
+
+            for col_idx in 0..num_cols {
+                let tile = self.grid.get_tile(col_idx, row_idx);
+                let tile_str = tile.get_str();
+
+                // Reference: https://ratatui.rs/examples/style/colors/
+                // I don't match using `Tile.tile_type` because I want to keep that low-level detail private,
+                // abstracted away, and decoupled from this view module, which should only know `App`.
+                let border_color = match tile_str {
+                    "." => Color::Gray,
+                    "1" => Color::Indexed(8),
+                    "2" => Color::Indexed(3),
+                    "4" => Color::Indexed(4),
+                    "8" => Color::Indexed(5),
+                    "16" => Color::Indexed(6),
+                    "32" => Color::Indexed(7),
+                    "64" => Color::Indexed(9),
+                    "128" => Color::Indexed(10),
+                    "256" => Color::Indexed(11),
+                    "512" => Color::Indexed(12),
+                    "1024" => Color::Indexed(13),
+                    "2048" => Color::Indexed(14),
+                    s if s.starts_with("*") => Color::Green,
+                    s if s.starts_with("/") => Color::Red,
+                    _ => Color::White,
+                };
+
+                let tile_block = Block::default()
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(border_color));
+
+                let tile_area = tile_block.inner(columns[col_idx]);
+                let text_layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Percentage(50), Constraint::Min(1)])
+                    .split(tile_area);
+
+                let text_widget = Paragraph::new(tile_str)
+                    .alignment(Alignment::Center)
+                    .style(Style::default().fg(Color::White).bold());
+
+                // Render text for all non-empty tiles.
+                if !tile.is_empty() {
+                    frame.render_widget(text_widget, text_layout[1]);
+                }
+
+                // Render borders for all non-empty tiles, and
+                // render borders for empty tiles only if a grid visibility flag is set.
+                if self.should_show_grid || !tile.is_empty() {
+                    frame.render_widget(tile_block, columns[col_idx]);
+                }
+            }
+        }
+    }
+
+    fn render_game_over_popup(&self, frame: &mut Frame, total_area: Rect) {
+        if matches!(self.game_state, GameState::Won | GameState::Lost) {
+            // 4. Render the centered "YOU WIN" popup box overlay
+            // Set size parameters for the popup box (30 columns wide, 6 rows high)
+            let popup_area = self.centered_rect(30, 6, total_area);
+
+            // Clear widget removes any underlying characters from the grid underneath
+            frame.render_widget(Clear, popup_area);
+
+            let border_color = if self.game_state == GameState::Won {
+                Color::Green
+            } else {
+                Color::Red
+            };
+
+            let message_text = if self.game_state == GameState::Won {
+                "YOU WIN"
+            } else {
+                "YOU LOSE"
+            };
+
+            // Build the victory notification dialog box
+            let popup_block = Block::default()
+                .title(" GAME OVER ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(border_color).bold());
+
+            // Center the message text vertically within the box area
+            let popup_area = popup_block.inner(popup_area);
+            let popup_text_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(50), Constraint::Min(1)])
+                .split(popup_area);
+
+            let popup_message = Paragraph::new(message_text)
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(border_color).bold());
+
+            frame.render_widget(popup_block, popup_area);
+            frame.render_widget(popup_message, popup_text_layout[1]);
+        }
+    }
+
+    // Helper function to build a centered bounding box geometry overlay
+    fn centered_rect(&self, width: u16, height: u16, r: Rect) -> Rect {
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length((r.height.saturating_sub(height)) / 2),
+                Constraint::Length(height),
+                Constraint::Min(0),
+            ])
+            .split(r);
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length((r.width.saturating_sub(width)) / 2),
+                Constraint::Length(width),
+                Constraint::Min(0),
+            ])
+            .split(popup_layout[1])[1]
+    }
+}
