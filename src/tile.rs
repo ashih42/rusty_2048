@@ -331,3 +331,38 @@ impl Tile {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_are_mergeable() {
+        let empty = Tile::new_empty();
+        let number2 = Tile::new_number(2);
+        let number4 = Tile::new_number(4);
+        let multiplier = Tile::new_multiplier(1);
+        let divider = Tile::new_divider(1);
+
+        assert!(!Tile::are_mergeable(&empty, &empty));
+        assert!(!Tile::are_mergeable(&empty, &number2));
+        assert!(!Tile::are_mergeable(&empty, &multiplier));
+        assert!(!Tile::are_mergeable(&empty, &divider));
+
+        assert!(!Tile::are_mergeable(&number2, &empty));
+        assert!(Tile::are_mergeable(&number2, &number2));
+        assert!(!Tile::are_mergeable(&number2, &number4));
+        assert!(Tile::are_mergeable(&number2, &multiplier));
+        assert!(Tile::are_mergeable(&number2, &divider));
+
+        assert!(!Tile::are_mergeable(&multiplier, &empty));
+        assert!(Tile::are_mergeable(&multiplier, &number2));
+        assert!(Tile::are_mergeable(&multiplier, &multiplier));
+        assert!(Tile::are_mergeable(&multiplier, &divider));
+
+        assert!(!Tile::are_mergeable(&divider, &empty));
+        assert!(Tile::are_mergeable(&divider, &number2));
+        assert!(Tile::are_mergeable(&divider, &multiplier));
+        assert!(Tile::are_mergeable(&divider, &divider));
+    }
+}
