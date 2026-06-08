@@ -1,5 +1,4 @@
 use std::{
-    cell::OnceCell,
     collections::HashMap,
     fmt::Display,
     sync::{LazyLock, Mutex},
@@ -10,62 +9,42 @@ use std::{
 ///
 /// Example: `Multiplier(3)` means multiply by 2^3, and it is displayed as `*8`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TileType {
+pub enum Tile {
     Empty,
     Number(u16),
     Multiplier(u8),
     Divider(u8),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Tile {
-    cached_string_repr: OnceCell<String>,
-    tile_type: TileType,
-}
-
 impl Tile {
     pub fn new_empty() -> Self {
-        Self {
-            cached_string_repr: OnceCell::new(),
-            tile_type: TileType::Empty,
-        }
+        Self::Empty
     }
 
     /// If `value` is 0, this constructor creates an empty tile instead.
     pub fn new_number(value: u16) -> Self {
-        let tile_type = if value == 0 {
-            TileType::Empty
+        if value == 0 {
+            Self::Empty
         } else {
-            TileType::Number(value)
-        };
-
-        Self {
-            cached_string_repr: OnceCell::new(),
-            tile_type,
+            Self::Number(value)
         }
     }
 
     pub fn new_multiplier(power: u8) -> Self {
-        Self {
-            cached_string_repr: OnceCell::new(),
-            tile_type: TileType::Multiplier(power),
-        }
+        Self::Multiplier(power)
     }
 
     pub fn new_divider(power: u8) -> Self {
-        Self {
-            cached_string_repr: OnceCell::new(),
-            tile_type: TileType::Divider(power),
-        }
+        Self::Divider(power)
     }
 
     pub fn is_empty(&self) -> bool {
-        matches!(self.tile_type, TileType::Empty)
+        matches!(self, Self::Empty)
     }
 
     pub fn get_value(&self) -> Option<u16> {
-        match self.tile_type {
-            TileType::Number(value) => Some(value),
+        match *self {
+            Self::Number(value) => Some(value),
             _ => None,
         }
     }
@@ -78,21 +57,18 @@ impl Tile {
     pub fn get_str(&self) -> &'static str {
         let to_string_fn = || self.to_string();
 
-        match self.tile_type {
-            TileType::Empty => ".",
-            TileType::Number(value) => Self::get_str_from_cache(&NUMBER_CACHE, value, to_string_fn),
-            TileType::Multiplier(power) => {
+        match *self {
+            Self::Empty => ".",
+            Self::Number(value) => Self::get_str_from_cache(&NUMBER_CACHE, value, to_string_fn),
+            Self::Multiplier(power) => {
                 Self::get_str_from_cache(&MULTIPLIER_CACHE, power, to_string_fn)
             }
-            TileType::Divider(power) => {
-                Self::get_str_from_cache(&DIVIDER_CACHE, power, to_string_fn)
-            }
+            Self::Divider(power) => Self::get_str_from_cache(&DIVIDER_CACHE, power, to_string_fn),
         }
     }
 
     /// Look in the cache for the value.  If an entry doesn't exist,
-    /// create the value with `to_string_fn` and update the cache,
-    /// and then return the value.
+    /// create the value with `to_string_fn` and update the cache, and then return the value.
     fn get_str_from_cache<T, U>(
         cache: &LazyLock<Mutex<HashMap<T, &'static str>>>,
         key: T,
@@ -112,6 +88,12 @@ impl Tile {
         })
     }
 }
+
+/// This trait limits the types that are used as the cache key.
+trait CacheKeyType: Eq + std::hash::Hash {}
+
+impl CacheKeyType for u8 {}
+impl CacheKeyType for u16 {}
 
 /// This cache maps a Number(value) to its string representation.
 static NUMBER_CACHE: LazyLock<Mutex<HashMap<u16, &'static str>>> = LazyLock::new(|| {
@@ -141,12 +123,6 @@ static DIVIDER_CACHE: LazyLock<Mutex<HashMap<u8, &'static str>>> = LazyLock::new
     Mutex::new(map)
 });
 
-/// This trait limits the types that are used as the cache key.
-trait CacheKeyType: Eq + std::hash::Hash {}
-
-impl CacheKeyType for u8 {}
-impl CacheKeyType for u16 {}
-
 /// These operations are related to defining the string representation for the tile.
 impl Tile {
     pub fn from_str(s: &str) -> Self {
@@ -171,11 +147,11 @@ impl Tile {
 impl Display for Tile {
     /// This also implements Tile::to_string()
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.tile_type {
-            TileType::Empty => write!(f, "."),
-            TileType::Number(value) => write!(f, "{}", value),
-            TileType::Multiplier(power) => write!(f, "*{}", 2 << (power - 1)),
-            TileType::Divider(power) => write!(f, "/{}", 2 << (power - 1)),
+        match self {
+            Self::Empty => write!(f, "."),
+            Self::Number(value) => write!(f, "{}", value),
+            Self::Multiplier(power) => write!(f, "*{}", 2 << (power - 1)),
+            Self::Divider(power) => write!(f, "/{}", 2 << (power - 1)),
         }
     }
 }
@@ -184,9 +160,9 @@ impl Display for Tile {
 impl Tile {
     /// Checks if the given 2 tiles can be merged.
     pub fn are_mergeable(a: &Self, b: &Self) -> bool {
-        use TileType::{Divider, Empty, Multiplier, Number};
+        use Tile::{Divider, Empty, Multiplier, Number};
 
-        match (a.tile_type, b.tile_type) {
+        match (a, b) {
             // No merge if either tile is empty.
             (Empty, _) | (_, Empty) => false,
 
@@ -214,9 +190,9 @@ impl Tile {
     /// set `a` to the result, set `b` to empty, and
     /// return a score from this merge.
     pub fn merge_tiles(a: &mut Self, b: &mut Self) -> i16 {
-        use TileType::{Divider, Empty, Multiplier, Number};
+        use Tile::{Divider, Empty, Multiplier, Number};
 
-        match (a.tile_type, b.tile_type) {
+        match (*a, *b) {
             // No merge if either tile is empty.
             (Empty, _) | (_, Empty) => 0,
 

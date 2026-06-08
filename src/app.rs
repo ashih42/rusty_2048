@@ -5,7 +5,7 @@ use ratatui::{
 };
 use std::io::{self, Stdout};
 
-use crate::{grid::Grid, move_direction::MoveDirection, vector2d::Vector2D};
+use crate::{grid::Grid, move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
 #[derive(Debug, PartialEq)]
 enum GameState {
@@ -227,25 +227,23 @@ impl App {
                 let tile_str = tile.get_str();
 
                 // Reference: https://ratatui.rs/examples/style/colors/
-                // I don't match using `Tile.tile_type` because I want to keep that low-level detail private,
-                // abstracted away, and decoupled from this view module, which should only know `App`.
-                let border_color = match tile_str {
-                    "." => Color::Gray,
-                    "1" => Color::Indexed(8),
-                    "2" => Color::Indexed(3),
-                    "4" => Color::Indexed(4),
-                    "8" => Color::Indexed(5),
-                    "16" => Color::Indexed(6),
-                    "32" => Color::Indexed(7),
-                    "64" => Color::Indexed(9),
-                    "128" => Color::Indexed(10),
-                    "256" => Color::Indexed(11),
-                    "512" => Color::Indexed(12),
-                    "1024" => Color::Indexed(13),
-                    "2048" => Color::Indexed(14),
-                    s if s.starts_with("*") => Color::Green,
-                    s if s.starts_with("/") => Color::Red,
-                    _ => Color::White,
+                let border_color = match tile {
+                    Tile::Empty => Color::Gray,
+                    Tile::Multiplier(_) => Color::Green,
+                    Tile::Divider(_) => Color::Red,
+                    Tile::Number(1) => Color::Indexed(3),
+                    Tile::Number(2) => Color::Indexed(3),
+                    Tile::Number(4) => Color::Indexed(4),
+                    Tile::Number(8) => Color::Indexed(5),
+                    Tile::Number(16) => Color::Indexed(6),
+                    Tile::Number(32) => Color::Indexed(7),
+                    Tile::Number(64) => Color::Indexed(9),
+                    Tile::Number(128) => Color::Indexed(10),
+                    Tile::Number(256) => Color::Indexed(11),
+                    Tile::Number(512) => Color::Indexed(12),
+                    Tile::Number(1024) => Color::Indexed(13),
+                    Tile::Number(2048) => Color::Indexed(14),
+                    Tile::Number(_) => Color::White,
                 };
 
                 let tile_block = Block::default()
