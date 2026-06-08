@@ -1121,6 +1121,7 @@ name = "rusty_2048"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "itertools",
  "rand 0.10.1",
  "ratatui",
 ]

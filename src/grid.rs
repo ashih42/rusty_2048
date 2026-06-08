@@ -1,4 +1,5 @@
-use rand::seq::IndexedRandom;
+use itertools::Itertools;
+use rand::seq::IndexedRandom; // Bring trait into scope
 
 use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
@@ -90,15 +91,8 @@ impl Grid {
     fn generate_snapshot(&self) -> String {
         let rows: Vec<&[Tile]> = self.tiles.chunks(self.num_cols).collect();
 
-        // This code looks kinda ugly!
         rows.iter()
-            .map(|row| {
-                row.iter()
-                    .map(|tile| tile.to_string())
-                    .collect::<Vec<String>>()
-                    .join(" ")
-            })
-            .collect::<Vec<String>>()
+            .map(|row| row.iter().map(|tile| tile.to_string()).join(" "))
             .join("\n")
     }
 
