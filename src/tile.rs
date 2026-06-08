@@ -1,4 +1,9 @@
-use std::{cell::OnceCell, fmt::Display};
+use std::{
+    cell::OnceCell,
+    collections::HashMap,
+    fmt::Display,
+    sync::{LazyLock, Mutex},
+};
 
 /// Note: Multiplier and Divider variants store the base 2 power (aka exponent)
 /// of the scalar multiplier value.
@@ -64,40 +69,86 @@ impl Tile {
             _ => None,
         }
     }
+}
 
-    /// TODO: Instead, apply the flyweight pattern to cache all
-    /// common and unexpected cases as they occur.
-    ///
-    /// For commonly occurring tiles, this getter method simply returns
-    /// hard-coded static values.
-    ///
-    /// For other tiles, this method updates and returns this instance's cached value
-    /// with the interior mutability pattern.
-    pub fn get_str(&self) -> &str {
+/// These operations are related to obtaining a string representation from cache.
+impl Tile {
+    /// This getter method gets a cached string representation of the tile
+    /// from the appropriate global cache.
+    pub fn get_str(&self) -> &'static str {
+        let to_string_fn = || self.to_string();
+
         match self.tile_type {
             TileType::Empty => ".",
-            TileType::Number(1) => "1",
-            TileType::Number(2) => "2",
-            TileType::Number(4) => "4",
-            TileType::Number(8) => "8",
-            TileType::Number(16) => "16",
-            TileType::Number(32) => "32",
-            TileType::Number(64) => "64",
-            TileType::Number(128) => "128",
-            TileType::Number(256) => "256",
-            TileType::Number(512) => "512",
-            TileType::Number(1024) => "1024",
-            TileType::Number(2048) => "2048",
-            TileType::Multiplier(1) => "*2",
-            TileType::Multiplier(2) => "*4",
-            TileType::Multiplier(3) => "*8",
-            TileType::Divider(1) => "/2",
-            TileType::Divider(2) => "/4",
-            TileType::Divider(3) => "/8",
-            _ => self.cached_string_repr.get_or_init(|| self.to_string()),
+            TileType::Number(value) => Self::get_str_from_cache(&NUMBER_CACHE, value, to_string_fn),
+            TileType::Multiplier(power) => {
+                Self::get_str_from_cache(&MULTIPLIER_CACHE, power, to_string_fn)
+            }
+            TileType::Divider(power) => {
+                Self::get_str_from_cache(&DIVIDER_CACHE, power, to_string_fn)
+            }
         }
     }
 
+    /// Look in the cache for the value.  If an entry doesn't exist,
+    /// create the value with `to_string_fn` and update the cache,
+    /// and then return the value.
+    fn get_str_from_cache<T, U>(
+        cache: &LazyLock<Mutex<HashMap<T, &'static str>>>,
+        key: T,
+        to_string_fn: U,
+    ) -> &'static str
+    where
+        T: CacheKeyType,
+        U: Fn() -> String,
+    {
+        let mut map = cache.lock().unwrap();
+
+        map.entry(key).or_insert_with(|| {
+            let value = to_string_fn();
+            log::info!("Inserting value in cache: {}", value);
+
+            Box::leak(value.into_boxed_str())
+        })
+    }
+}
+
+/// This cache maps a Number(value) to its string representation.
+static NUMBER_CACHE: LazyLock<Mutex<HashMap<u16, &'static str>>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert(2, "2");
+    map.insert(4, "4");
+    map.insert(8, "8");
+    map.insert(16, "16");
+    Mutex::new(map)
+});
+
+/// This cache maps a Multiplier(power) to its string representation.
+static MULTIPLIER_CACHE: LazyLock<Mutex<HashMap<u8, &'static str>>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert(1, "*2");
+    map.insert(2, "*4");
+    map.insert(3, "*8");
+    Mutex::new(map)
+});
+
+/// This cache maps a Divider(power) to its string representation.
+static DIVIDER_CACHE: LazyLock<Mutex<HashMap<u8, &'static str>>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    map.insert(1, "/2");
+    map.insert(2, "/4");
+    map.insert(3, "/8");
+    Mutex::new(map)
+});
+
+/// This trait limits the types that are used as the cache key.
+trait CacheKeyType: Eq + std::hash::Hash {}
+
+impl CacheKeyType for u8 {}
+impl CacheKeyType for u16 {}
+
+/// These operations are related to defining the string representation for the tile.
+impl Tile {
     pub fn from_str(s: &str) -> Self {
         match s {
             "." => Self::new_empty(),
