@@ -4,6 +4,7 @@ use std::{error::Error, fmt::Display};
 pub enum MyError {
     InvalidCommandLineArgumentsError,
     GridDimensionError(String),
+    LoggerInitializationError(String),
 }
 
 impl Display for MyError {
@@ -11,6 +12,13 @@ impl Display for MyError {
         match self {
             Self::InvalidCommandLineArgumentsError => write!(f, "Invalid command line arguments."),
             Self::GridDimensionError(s) => write!(f, "{}", s),
+            Self::LoggerInitializationError(tty_path) => {
+                write!(
+                    f,
+                    "Could not initialize logger to write to TTY: {}",
+                    tty_path
+                )
+            }
         }
     }
 }

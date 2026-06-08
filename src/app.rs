@@ -73,6 +73,8 @@ impl App {
     /// This is the big logic update function, called after any gameplay event
     /// that may affect the game state.
     fn tick(&mut self, direction: MoveDirection) {
+        log::info!("app.tick(), turn {}", self.current_turn);
+
         if matches!(self.game_state, GameState::Won | GameState::Lost) {
             return;
         }

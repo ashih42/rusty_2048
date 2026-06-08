@@ -45,6 +45,16 @@ You can run the game with your specific grid size.
 cargo run -- 6 8
 ```
 
+### How to Run with Logging to Another TTY
+
+1. In the terminal used for logging, use the `tty` command to find the TTY path for this terminal.
+
+2. In another terminal used for display this app, run the app with logging enabled for a specific TTY path.
+
+```
+RUST_LOG=info cargo run -- --tty=/dev/ttys000
+```
+
 ## Possibly Upcoming Features
 
 - Add feature to undo/rollback to a previous turn state.

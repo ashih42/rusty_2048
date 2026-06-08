@@ -21,6 +21,3 @@
 - Adjust game difficulty to become harder.
   - Try spawning more tiles every turn.
   - Try scaling the amount spawned based on amount of empty space remaining.
-
-- Add logging to a different tty.
-  - Need to expand the command line parser.
