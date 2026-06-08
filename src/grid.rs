@@ -96,12 +96,6 @@ impl Grid {
             .join("\n")
     }
 
-    fn print_grid(&self) {
-        println!("num_rows: {}", self.num_rows);
-        println!("num_cols: {}", self.num_cols);
-        println!("snapshot:\n{}\n", self.generate_snapshot());
-    }
-
     /// Return a vector containing positions of all empty tiles.
     fn collect_empty_positions(&self) -> Vec<Vector2D<usize>> {
         self.tiles
@@ -353,12 +347,18 @@ impl Grid {
 mod tests {
     use super::*;
 
+    fn print_grid(grid: &Grid) {
+        println!("num_rows: {}", grid.num_rows);
+        println!("num_cols: {}", grid.num_cols);
+        println!("snapshot:\n{}\n", grid.generate_snapshot());
+    }
+
     #[test]
     fn test_print_grid() {
         let (num_rows, num_cols) = (2, 3);
         let mut grid = Grid::new(num_rows, num_cols);
 
-        grid.print_grid();
+        print_grid(&grid);
 
         let empty_positions = grid.collect_empty_positions();
         println!("\nempty_positions: {:?}", empty_positions);
@@ -370,7 +370,7 @@ mod tests {
         for i in 0..10 {
             println!("i = {i}");
             grid.spawn_random_tile_at_random_location();
-            grid.print_grid();
+            print_grid(&grid);
         }
     }
 
@@ -385,7 +385,7 @@ mod tests {
         assert_eq!(grid.num_cols, 4);
         assert_eq!(grid.generate_snapshot(), ". . 4 .\n. 32 . 16");
 
-        grid.print_grid();
+        print_grid(&grid);
 
         let empty_positions = grid.collect_empty_positions();
         println!("\nempty_positions: {:?}", empty_positions);
