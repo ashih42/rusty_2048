@@ -55,27 +55,27 @@ impl Grid {
     }
 
     pub fn get_tile(&self, position: &Vector2D<usize>) -> &Tile {
-        let index = self.get_1d_index(position.x, position.y);
+        let index = self.get_1d_index(position);
 
         &self.tiles[index]
     }
 
-    fn set_tile(&mut self, x: usize, y: usize, tile: Tile) {
-        let index = self.get_1d_index(x, y);
+    fn set_tile(&mut self, position: &Vector2D<usize>, tile: Tile) {
+        let index = self.get_1d_index(position);
 
         self.tiles[index] = tile;
     }
 
     /// Swap the contents of the tiles at the 2 given positions.
     fn swap_tiles(&mut self, a_position: &Vector2D<usize>, b_position: &Vector2D<usize>) {
-        let a_index = self.get_1d_index(a_position.x, a_position.y);
-        let b_index = self.get_1d_index(b_position.x, b_position.y);
+        let a_index = self.get_1d_index(a_position);
+        let b_index = self.get_1d_index(b_position);
 
         self.tiles.swap(a_index, b_index);
     }
 
-    fn get_1d_index(&self, x: usize, y: usize) -> usize {
-        x + y * self.num_cols
+    fn get_1d_index(&self, position: &Vector2D<usize>) -> usize {
+        position.x + position.y * self.num_cols
     }
 
     fn get_2d_position(&self, index: usize) -> Vector2D<usize> {
@@ -133,7 +133,7 @@ impl Grid {
                 Tile::new_divider(power)
             };
 
-            self.set_tile(position.x, position.y, tile);
+            self.set_tile(&position, tile);
             Some(position)
         } else {
             None
@@ -321,8 +321,8 @@ impl Grid {
                 let a_pos = &positions[0];
                 let b_pos = &positions[1];
 
-                let a_index = self.get_1d_index(a_pos.x, a_pos.y);
-                let b_index = self.get_1d_index(b_pos.x, b_pos.y);
+                let a_index = self.get_1d_index(a_pos);
+                let b_index = self.get_1d_index(b_pos);
 
                 let [a_tile, b_tile] = self.tiles.get_disjoint_mut([a_index, b_index]).unwrap();
                 Tile::merge_tiles(a_tile, b_tile)
