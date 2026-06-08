@@ -53,5 +53,4 @@ cargo run -- 6 8
 - Add feature toggle on/off AI auto-play mode.
   - AI may choose a direction randomly.
   - AI may choose greedily the direction that produces a highest score in the immediate next turn.
-- Add visuals to distinguish a tile that was just randomly spawned this turn.
 - Add animations?!
