@@ -136,51 +136,23 @@ impl Tile {
         use TileType::{Divider, Empty, Multiplier, Number};
 
         match (a.tile_type, b.tile_type) {
-            // No change.
-            (Empty, Empty) => false,
+            // No merge if either tile is empty.
+            (Empty, _) | (_, Empty) => false,
 
-            // No change.
-            (Empty, Number(_)) => false,
-
-            // No change.
-            (Empty, Multiplier(_)) => false,
-
-            // No change.
-            (Empty, Divider(_)) => false,
-
-            // No change.
-            (Number(_), Empty) => false,
-
-            // If both numbers have same value, then merge.
-            // Otherwise, no change.
+            // Merge only if both numbers have the same value.
             (Number(a_value), Number(b_value)) => a_value == b_value,
 
-            // Calculate product.
-            (Number(_), Multiplier(_)) => true,
+            // Perform multiplication and merge.
+            (Number(_), Multiplier(_)) | (Multiplier(_), Number(_)) => true,
 
-            // Calculate quotient.
-            (Number(_), Divider(_)) => true,
-
-            // No change.
-            (Multiplier(_), Empty) => false,
-
-            // Calculate product.
-            (Multiplier(_), Number(_)) => true,
+            // Perform division and merge.
+            (Number(_), Divider(_)) | (Divider(_), Number(_)) => true,
 
             // Merge multipliers.
             (Multiplier(_), Multiplier(_)) => true,
 
             // Merge multiplier and divider.
-            (Multiplier(_), Divider(_)) => true,
-
-            // No change.
-            (Divider(_), Empty) => false,
-
-            // Calculate quotient.
-            (Divider(_), Number(_)) => true,
-
-            // Merge divider and multiplier.
-            (Divider(_), Multiplier(_)) => true,
+            (Multiplier(_), Divider(_)) | (Divider(_), Multiplier(_)) => true,
 
             // Merge dividers.
             (Divider(_), Divider(_)) => true,
