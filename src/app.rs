@@ -5,7 +5,7 @@ use ratatui::{
 };
 use std::io::{self, Stdout};
 
-use crate::{grid::Grid, move_direction::MoveDirection};
+use crate::{grid::Grid, move_direction::MoveDirection, vector2d::Vector2D};
 
 #[derive(Debug, PartialEq)]
 enum GameState {
@@ -24,14 +24,12 @@ pub struct App {
     best_score: u16,
     winning_target: u16,
     grid: Grid,
+    new_tile_positions: Vec<Vector2D<usize>>,
 }
 
 impl App {
     pub fn new(num_rows: usize, num_cols: usize) -> Self {
-        let mut grid = Grid::new(num_rows, num_cols);
-        grid.spawn_random_tile_at_random_location();
-
-        Self {
+        let mut app = Self {
             should_show_grid: true,
             should_exit: false,
             game_state: GameState::InPlay,
@@ -39,7 +37,17 @@ impl App {
             current_score: 0,
             best_score: 0,
             winning_target: 2048,
-            grid,
+            grid: Grid::new(num_rows, num_cols),
+            new_tile_positions: Vec::new(),
+        };
+
+        app.spawn_tile();
+        app
+    }
+
+    fn spawn_tile(&mut self) {
+        if let Some(position) = self.grid.spawn_random_tile_at_random_location() {
+            self.new_tile_positions.push(position);
         }
     }
 
@@ -58,6 +66,7 @@ impl App {
         self.current_score = 0;
 
         self.grid.clear();
+        self.new_tile_positions.clear();
         self.grid.spawn_random_tile_at_random_location();
     }
 
@@ -72,8 +81,10 @@ impl App {
         self.update_scores(score);
         self.current_turn += 1;
 
+        self.new_tile_positions.clear();
+
         if rand::random() {
-            self.grid.spawn_random_tile_at_random_location();
+            self.spawn_tile();
         }
 
         self.check_if_won();
@@ -209,6 +220,7 @@ impl App {
                 .split(rows[row_idx]);
 
             for col_idx in 0..num_cols {
+                let position = Vector2D::new(col_idx, row_idx);
                 let tile = self.grid.get_tile(col_idx, row_idx);
                 let tile_str = tile.get_str();
 
@@ -248,9 +260,20 @@ impl App {
                     .alignment(Alignment::Center)
                     .style(Style::default().fg(Color::White).bold());
 
+                let new_tile_text_widget = Paragraph::new("NEW")
+                    .alignment(Alignment::Left)
+                    .style(Style::default().fg(Color::White).bold());
+
+                let is_new_tile = self.new_tile_positions.contains(&position);
+
                 // Render text for all non-empty tiles.
                 if !tile.is_empty() {
                     frame.render_widget(text_widget, text_layout[1]);
+
+                    // Render text indicating this tile just spawned on this turn.
+                    if self.new_tile_positions.contains(&position) {
+                        frame.render_widget(new_tile_text_widget, text_layout[0]);
+                    }
                 }
 
                 // Render borders for all non-empty tiles, and
