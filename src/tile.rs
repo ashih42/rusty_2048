@@ -4,7 +4,7 @@ use std::{cell::OnceCell, fmt::Display};
 /// of the scalar multiplier value.
 ///
 /// Example: `Multiplier(3)` means multiply by 2^3, and it is displayed as `*8`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TileType {
     Empty,
     Number(u16),
@@ -12,7 +12,7 @@ enum TileType {
     Divider(u8),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tile {
     cached_string_repr: OnceCell<String>,
     tile_type: TileType,
@@ -364,5 +364,261 @@ mod tests {
         assert!(Tile::are_mergeable(&divider, &number2));
         assert!(Tile::are_mergeable(&divider, &multiplier));
         assert!(Tile::are_mergeable(&divider, &divider));
+    }
+
+    #[test]
+    fn test_merge_tiles() {
+        // Empty + Empty
+        {
+            let mut a = Tile::new_empty();
+            let mut b = Tile::new_empty();
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Empty + Number
+        {
+            let mut a = Tile::new_empty();
+            let mut b = Tile::new_number(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_number(2));
+            assert_eq!(score, 0);
+        }
+
+        // Empty + Multiplier
+        {
+            let mut a = Tile::new_empty();
+            let mut b = Tile::new_multiplier(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_multiplier(1));
+            assert_eq!(score, 0);
+        }
+
+        // Empty + Divider
+        {
+            let mut a = Tile::new_empty();
+            let mut b = Tile::new_divider(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_divider(1));
+            assert_eq!(score, 0);
+        }
+
+        // Number + Empty
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_empty();
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(2));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Number(2) + Number(2) => Number(4)
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_number(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(4));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 4);
+        }
+
+        // Number(2) + Number(4) => Does Not Merge
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_number(4);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(2));
+            assert_eq!(b, Tile::new_number(4));
+            assert_eq!(score, 0);
+        }
+
+        // Number + Multiplier
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_multiplier(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(4));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 4);
+        }
+
+        // Number + Divider => Number
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_divider(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, -1);
+        }
+
+        // Number + Divider => Empty
+        {
+            let mut a = Tile::new_number(2);
+            let mut b = Tile::new_divider(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Multiplier + Empty
+        {
+            let mut a = Tile::new_multiplier(1);
+            let mut b = Tile::new_empty();
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_multiplier(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Multiplier + Number
+        {
+            let mut a = Tile::new_multiplier(1);
+            let mut b = Tile::new_number(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(4));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 4);
+        }
+
+        // Multiplier + Multiplier
+        {
+            let mut a = Tile::new_multiplier(1);
+            let mut b = Tile::new_multiplier(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_multiplier(3));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Multiplier + Divider => Multiplier
+        {
+            let mut a = Tile::new_multiplier(2);
+            let mut b = Tile::new_divider(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_multiplier(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Multiplier + Divider => Divider
+        {
+            let mut a = Tile::new_multiplier(1);
+            let mut b = Tile::new_divider(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_divider(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Multiplier + Divider => Empty
+        {
+            let mut a = Tile::new_multiplier(1);
+            let mut b = Tile::new_divider(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Empty
+        {
+            let mut a = Tile::new_divider(1);
+            let mut b = Tile::new_empty();
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_divider(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Number => Number
+        {
+            let mut a = Tile::new_divider(1);
+            let mut b = Tile::new_number(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_number(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, -1);
+        }
+
+        // Divider + Number => Empty
+        {
+            let mut a = Tile::new_divider(2);
+            let mut b = Tile::new_number(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Multiplier => Multiplier
+        {
+            let mut a = Tile::new_divider(1);
+            let mut b = Tile::new_multiplier(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_multiplier(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Multiplier => Divider
+        {
+            let mut a = Tile::new_divider(2);
+            let mut b = Tile::new_multiplier(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_divider(1));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Multiplier => Empty
+        {
+            let mut a = Tile::new_divider(1);
+            let mut b = Tile::new_multiplier(1);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_empty());
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
+
+        // Divider + Divider
+        {
+            let mut a = Tile::new_divider(1);
+            let mut b = Tile::new_divider(2);
+            let score = Tile::merge_tiles(&mut a, &mut b);
+
+            assert_eq!(a, Tile::new_divider(3));
+            assert_eq!(b, Tile::new_empty());
+            assert_eq!(score, 0);
+        }
     }
 }
