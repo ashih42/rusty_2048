@@ -264,8 +264,6 @@ impl App {
                     .alignment(Alignment::Left)
                     .style(Style::default().fg(Color::White).bold());
 
-                let is_new_tile = self.new_tile_positions.contains(&position);
-
                 // Render text for all non-empty tiles.
                 if !tile.is_empty() {
                     frame.render_widget(text_widget, text_layout[1]);
