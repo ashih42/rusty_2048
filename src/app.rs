@@ -221,7 +221,7 @@ impl App {
 
             for col_idx in 0..num_cols {
                 let position = Vector2D::new(col_idx, row_idx);
-                let tile = self.grid.get_tile(col_idx, row_idx);
+                let tile = self.grid.get_tile(&position);
                 let tile_str = tile.get_str();
 
                 // Reference: https://ratatui.rs/examples/style/colors/

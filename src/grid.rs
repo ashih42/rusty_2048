@@ -54,8 +54,8 @@ impl Grid {
         self.tiles.fill(Tile::new_empty());
     }
 
-    pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
-        let index = self.get_1d_index(x, y);
+    pub fn get_tile(&self, position: &Vector2D<usize>) -> &Tile {
+        let index = self.get_1d_index(position.x, position.y);
 
         &self.tiles[index]
     }
@@ -295,13 +295,13 @@ impl Grid {
     /// Time complexity is O(n^2), where n is number of elements in `positional_row`.
     fn shift(&mut self, positional_row: &[Vector2D<usize>]) {
         for (i, current_pos) in positional_row.iter().enumerate() {
-            let current_tile = self.get_tile(current_pos.x, current_pos.y);
+            let current_tile = self.get_tile(current_pos);
 
             if current_tile.is_empty() {
                 let remaining_positions = &positional_row[i + 1..];
 
                 for next_pos in remaining_positions {
-                    let next_tile = self.get_tile(next_pos.x, next_pos.y);
+                    let next_tile = self.get_tile(next_pos);
 
                     if !next_tile.is_empty() {
                         self.swap_tiles(current_pos, next_pos);
@@ -336,8 +336,8 @@ impl Grid {
             let a_pos = &positions[0];
             let b_pos = &positions[1];
 
-            let a_tile = self.get_tile(a_pos.x, a_pos.y);
-            let b_tile = self.get_tile(b_pos.x, b_pos.y);
+            let a_tile = self.get_tile(a_pos);
+            let b_tile = self.get_tile(b_pos);
 
             if Tile::are_mergeable(a_tile, b_tile) {
                 return true;
