@@ -166,23 +166,10 @@ impl Tile {
         use TileType::{Divider, Empty, Multiplier, Number};
 
         match (a.tile_type, b.tile_type) {
-            // No change.
-            (Empty, Empty) => 0,
+            // No merge if either tile is empty.
+            (Empty, _) | (_, Empty) => 0,
 
-            // No change.
-            (Empty, Number(_)) => 0,
-
-            // No change.
-            (Empty, Multiplier(_)) => 0,
-
-            // No change.
-            (Empty, Divider(_)) => 0,
-
-            // No change.
-            (Number(_), Empty) => 0,
-
-            // If both numbers have same value, then calculate sum.
-            // Otherwise, no change.
+            // Merge only if both numbers have the same value.
             (Number(a_value), Number(b_value)) => {
                 if a_value == b_value {
                     let (sum, score) = Self::calculate_sum_and_score(a_value, b_value);
@@ -194,29 +181,18 @@ impl Tile {
                 }
             }
 
-            // Calculate product.
-            (Number(value), Multiplier(power)) => {
+            // Perform multiplication and merge.
+            (Number(value), Multiplier(power)) | (Multiplier(power), Number(value)) => {
                 let (product, score) = Self::calculate_product_and_score(value, power);
                 *a = Self::new_number(product);
                 *b = Self::new_empty();
                 score
             }
 
-            // Calculate quotient.
-            (Number(value), Divider(power)) => {
+            // Perform division and merge.
+            (Number(value), Divider(power)) | (Divider(power), Number(value)) => {
                 let (quotient, score) = Self::calculate_quotient_and_score(value, power);
                 *a = Self::new_number(quotient);
-                *b = Self::new_empty();
-                score
-            }
-
-            // No change.
-            (Multiplier(_), Empty) => 0,
-
-            // Calculate product.
-            (Multiplier(power), Number(value)) => {
-                let (product, score) = Self::calculate_product_and_score(value, power);
-                *a = Self::new_number(product);
                 *b = Self::new_empty();
                 score
             }
@@ -229,25 +205,8 @@ impl Tile {
             }
 
             // Merge multiplier and divider.
-            (Multiplier(mult_power), Divider(div_power)) => {
-                *a = Self::merge_multiplier_and_divider(mult_power, div_power);
-                *b = Self::new_empty();
-                0
-            }
-
-            // No change.
-            (Divider(_), Empty) => 0,
-
-            // Calculate quotient.
-            (Divider(power), Number(value)) => {
-                let (quotient, score) = Self::calculate_quotient_and_score(value, power);
-                *a = Self::new_number(quotient);
-                *b = Self::new_empty();
-                score
-            }
-
-            // Merge divider and multiplier.
-            (Divider(div_power), Multiplier(mult_power)) => {
+            (Multiplier(mult_power), Divider(div_power))
+            | (Divider(div_power), Multiplier(mult_power)) => {
                 *a = Self::merge_multiplier_and_divider(mult_power, div_power);
                 *b = Self::new_empty();
                 0
