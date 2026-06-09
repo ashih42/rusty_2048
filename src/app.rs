@@ -231,7 +231,7 @@ impl App {
                     Tile::Empty => Color::Gray,
                     Tile::Multiplier(_) => Color::Green,
                     Tile::Divider(_) => Color::Red,
-                    Tile::Number(1) => Color::Indexed(3),
+                    Tile::Number(1) => Color::Indexed(8),
                     Tile::Number(2) => Color::Indexed(3),
                     Tile::Number(4) => Color::Indexed(4),
                     Tile::Number(8) => Color::Indexed(5),
