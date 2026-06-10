@@ -55,7 +55,7 @@ impl App {
         load_file(SAVE_FILE_PATH, 0).map_err(|err| {
             log::error!("Error loading save file: {}", err);
 
-            MyError::SaveDataError {
+            MyError::SaveFileError {
                 save_file_path: SAVE_FILE_PATH.to_string(),
             }
         })

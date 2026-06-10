@@ -4,8 +4,8 @@ use std::{error::Error, fmt::Display};
 pub enum MyError {
     InvalidCommandLineArgumentsError,
     GridDimensionError(String),
-    LoggerInitializationError(String),
-    SaveDataError { save_file_path: String },
+    LoggerInitializationError { tty_path: String },
+    SaveFileError { save_file_path: String },
 }
 
 impl Display for MyError {
@@ -13,14 +13,14 @@ impl Display for MyError {
         match self {
             Self::InvalidCommandLineArgumentsError => write!(f, "Invalid command line arguments."),
             Self::GridDimensionError(s) => write!(f, "{}", s),
-            Self::LoggerInitializationError(tty_path) => {
+            Self::LoggerInitializationError { tty_path, .. } => {
                 write!(
                     f,
                     "Could not initialize logger to write to TTY: {}",
                     tty_path
                 )
             }
-            Self::SaveDataError { save_file_path } => write!(
+            Self::SaveFileError { save_file_path } => write!(
                 f,
                 "Failed to load from save data\n\
                 Recommendation: Delete the corrupted save data: {}",
