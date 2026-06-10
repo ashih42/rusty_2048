@@ -58,7 +58,7 @@ impl Tile {
         let mut cache = TILE_STR_CACHE.lock().unwrap();
 
         cache.entry(*self).or_insert_with(|| {
-            let value = self.to_string();
+            let value = self.get_fancy_string();
             log::info!("Inserting in cache: {}", value);
 
             Box::leak(value.into_boxed_str())
@@ -68,25 +68,66 @@ impl Tile {
 
 /// This cache maps a Tile to its string representation.
 static TILE_STR_CACHE: LazyLock<Mutex<HashMap<Tile, &'static str>>> = LazyLock::new(|| {
-    let cache = HashMap::from([
-        (Tile::new_empty(), "."),
-        (Tile::new_number(2), "2"),
-        (Tile::new_number(4), "4"),
-        (Tile::new_number(8), "8"),
-        (Tile::new_number(16), "16"),
-        (Tile::new_multiplier(1), "*2"),
-        (Tile::new_multiplier(2), "*4"),
-        (Tile::new_multiplier(3), "*8"),
-        (Tile::new_divider(1), "/2"),
-        (Tile::new_divider(2), "/4"),
-        (Tile::new_divider(3), "/8"),
-    ]);
+    let common_tiles = [
+        Tile::new_empty(),
+        Tile::new_number(2),
+        Tile::new_number(4),
+        Tile::new_number(8),
+        Tile::new_number(16),
+        Tile::new_multiplier(1),
+        Tile::new_multiplier(2),
+        Tile::new_multiplier(3),
+        Tile::new_divider(1),
+        Tile::new_divider(2),
+        Tile::new_divider(3),
+    ];
+
+    let cache = HashMap::from(common_tiles.map(|tile| {
+        (
+            tile,
+            Box::leak(tile.get_fancy_string().into_boxed_str()) as &'static str,
+        )
+    }));
 
     Mutex::new(cache)
 });
 
-/// These operations are related to defining the string representation for the tile.
+/// These operations are related to defining string representations for the tile.
 impl Tile {
+    /// Return a fancy string representation of the tile, which may include
+    /// emojis and other unicode characters.
+    fn get_fancy_string(&self) -> String {
+        match self {
+            Self::Empty => String::from(" "),
+            Self::Number(value) => value
+                .to_string()
+                .chars()
+                .map(|ch| match ch {
+                    '0' => "0️⃣",
+                    '1' => "1️⃣",
+                    '2' => "2️⃣",
+                    '3' => "3️⃣",
+                    '4' => "4️⃣",
+                    '5' => "5️⃣",
+                    '6' => "6️⃣",
+                    '7' => "7️⃣",
+                    '8' => "8️⃣",
+                    '9' => "9️⃣",
+                    _ => unreachable!(),
+                })
+                .collect(),
+            Self::Multiplier(power) => format!("× {}", 2 << (power - 1)),
+            Self::Divider(power) => format!("÷ {}", 2 << (power - 1)),
+        }
+    }
+
+    /// Construct a tile from an input string containing only ascii characters.
+    /// The input string must be valid.
+    ///
+    /// Currently, this is only used for unit-testing.  Consider implementing the FromStr trait
+    /// and handle error cases instead, if this operation becomes necessary
+    /// in the upcoming feature of loading a save file.
+    #[allow(dead_code)]
     pub fn from_str(s: &str) -> Self {
         match s {
             "." => Self::new_empty(),
@@ -107,7 +148,7 @@ impl Tile {
 }
 
 impl Display for Tile {
-    /// This also implements Tile::to_string()
+    /// Represent the tile with a simple string with only ascii characters.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "."),
