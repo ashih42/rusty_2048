@@ -3,6 +3,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Clear, Paragraph},
 };
+use std::fs;
 use std::io::{self, Stdout};
 
 use savefile::prelude::*;
@@ -51,16 +52,39 @@ impl App {
         app
     }
 
-    pub fn load_from_save_file() -> Result<Self, MyError> {
+    /// Try to construct an App from the save file, which should exist.
+    pub fn try_from_save_file() -> Result<Self, MyError> {
+        // 1. Check if save file exists.
+        match fs::exists(SAVE_FILE_PATH) {
+            Ok(true) => (),
+            Ok(false) => {
+                return Err(MyError::SaveFileNotFoundError {
+                    save_file_path: SAVE_FILE_PATH.to_owned(),
+                });
+            }
+            Err(err) => {
+                log::error!(
+                    "File system could not determine if save file exists: {}\nError: {}",
+                    SAVE_FILE_PATH,
+                    err,
+                );
+                return Err(MyError::SaveFileNotFoundError {
+                    save_file_path: SAVE_FILE_PATH.to_owned(),
+                });
+            }
+        }
+
+        // 2. Read the save file contents into an App.
         load_file(SAVE_FILE_PATH, 0).map_err(|err| {
             log::error!("Error loading save file: {}", err);
 
-            MyError::SaveFileError {
+            MyError::SaveFileFailedToLoadError {
                 save_file_path: SAVE_FILE_PATH.to_string(),
             }
         })
     }
 
+    /// Save the entire game state to file, and then exit.
     fn save_and_exit(&mut self) {
         if let Err(err) = save_file("save.bin", 0, self) {
             log::error!("Failed to save game to file: {}", err);

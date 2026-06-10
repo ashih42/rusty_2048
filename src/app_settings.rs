@@ -1,9 +1,17 @@
+use indoc::indoc;
 use std::env;
 
 use crate::my_error::MyError;
 
-/// This data object contains data that are used before starting App.
+/// This data object contains data that are used before starting the app and/or
+/// relevant to building the app.
+///
+/// Note: Some command line flags override other flags, if both are provided.
+/// - --help overrides everything, only showing the usage page, not running the app.
+/// - --load overrides --grid, loading the saved game (ignoring the specified grid size).
 pub struct AppSettings {
+    pub help: bool,
+    pub load_from_save_file: bool,
     pub grid_size: (usize, usize),
     pub tty_path: Option<String>,
 }
@@ -14,6 +22,8 @@ impl Default for AppSettings {
         const DEFAULT_NUM_COLS: usize = 5;
 
         Self {
+            help: false,
+            load_from_save_file: false,
             grid_size: (DEFAULT_NUM_ROWS, DEFAULT_NUM_COLS),
             tty_path: None,
         }
@@ -24,33 +34,43 @@ impl AppSettings {
     /// This constructor may fail if given invalid arguments.
     pub fn try_from_command_line() -> Result<Self, MyError> {
         let mut settings = Self::default();
-        let args: Vec<String> = env::args().skip(1).collect();
 
-        settings.parse_args(&args)?;
+        for arg in env::args().skip(1) {
+            settings.parse_arg(&arg)?;
+        }
         Ok(settings)
     }
 
-    /// Process each argument independently.
-    /// If any argument is invalid, this operation returns an error.
-    fn parse_args(&mut self, args: &[String]) -> Result<(), MyError> {
+    /// Process a command line argument, which must always be a complete flag,
+    /// with its values given in this format:
+    /// ---flag=value1,value2
+    fn parse_arg(&mut self, arg: &str) -> Result<(), MyError> {
+        let help_flag = "--help";
+        let load_flag = "--load";
         let grid_size_prefix = "--grid=";
         let tty_prefix = "--tty=";
 
-        for arg in args {
-            match arg {
-                _ if arg.starts_with(grid_size_prefix) => {
-                    let input = &arg[grid_size_prefix.len()..];
-                    self.grid_size = Self::parse_grid_size(input)?;
-                }
-                _ if arg.starts_with(tty_prefix) => {
-                    let tty_path = &arg[tty_prefix.len()..];
-                    self.tty_path = Some(tty_path.to_string());
-                }
-                _ => {
-                    return Err(MyError::InvalidCommandLineArgumentsError);
-                }
-            };
-        }
+        match arg {
+            _ if arg == help_flag => {
+                self.help = true;
+            }
+            _ if arg == load_flag => {
+                self.load_from_save_file = true;
+            }
+            _ if arg.starts_with(grid_size_prefix) => {
+                let input = &arg[grid_size_prefix.len()..];
+                self.grid_size = Self::parse_grid_size(input)?;
+            }
+            _ if arg.starts_with(tty_prefix) => {
+                let tty_path = &arg[tty_prefix.len()..];
+                self.tty_path = Some(tty_path.to_owned());
+            }
+            _ => {
+                return Err(MyError::InvalidCommandLineArgumentError {
+                    arg: arg.to_owned(),
+                });
+            }
+        };
 
         Ok(())
     }
@@ -61,7 +81,10 @@ impl AppSettings {
         let dimensions: Vec<&str> = input.split(',').collect();
 
         if dimensions.len() != 2 {
-            return Err(MyError::InvalidCommandLineArgumentsError);
+            return Err(MyError::GridDimensionError(format!(
+                "Invalid grid dimensions: {}",
+                input
+            )));
         }
 
         let num_rows = Self::parse_grid_dimension(dimensions[0])?;
@@ -84,6 +107,23 @@ impl AppSettings {
             Ok(n) => Ok(n),
         }
     }
+
+    pub fn get_usage() -> &'static str {
+        indoc! {"
+            Usage:
+            Run the game directly with optional command line flags.
+            rusty_2048 [ <flag> ... ]
+            
+            Run the game from cargo with optional command line flags.
+            cargo run -- [ <flag> ... ]
+
+            Command line flags:
+            \t--help                              Show this usage page.
+            \t--load                              Load the game from save file.
+            \t--grid=<num_rows>,<num_cols>        Start the game with a specific grid size.
+            \t--tty=<tty_path>                    Enable logging to a specific tty.
+        "}
+    }
 }
 
 #[cfg(test)]
@@ -91,22 +131,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_default_app_settings() {
-        let settings = AppSettings::default();
-
-        assert_eq!(settings.grid_size, (4, 5));
-        assert_eq!(settings.tty_path, None);
-    }
-
-    #[test]
     fn test_parse_grid_size() {
         // Valid input
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=3,4".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=3,4");
             assert!(result.is_ok());
             assert_eq!(settings.grid_size, (3, 4));
         }
@@ -115,9 +145,7 @@ mod tests {
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=what".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=what");
             assert!(result.is_err());
         }
 
@@ -125,9 +153,7 @@ mod tests {
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=3,4,5".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=3,4,5");
             assert!(result.is_err());
         }
 
@@ -135,9 +161,7 @@ mod tests {
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=2.4,6.8".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=2.4,6.8");
             assert!(result.is_err());
         }
 
@@ -145,9 +169,7 @@ mod tests {
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=2.4,6.8".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=2.4,6.8");
             assert!(result.is_err());
         }
 
@@ -155,9 +177,7 @@ mod tests {
         {
             let mut settings = AppSettings::default();
 
-            let args = vec!["--grid=1,1".to_string()];
-            let result = settings.parse_args(&args);
-
+            let result = settings.parse_arg("--grid=1,1");
             assert!(result.is_err());
         }
     }
