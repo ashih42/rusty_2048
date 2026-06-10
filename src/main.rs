@@ -1,3 +1,5 @@
+use std::fs;
+
 use rusty_2048::{
     app::App, app_settings::AppSettings, logger::initialize_logger, my_error::MyError,
 };
@@ -12,10 +14,14 @@ fn run() -> Result<(), MyError> {
     let settings = AppSettings::try_from_command_line()?;
     initialize_logger(&settings.tty_path)?;
 
-    let (num_rows, num_cols) = settings.grid_size;
-    log::info!("Launching rusty_2048 with grid size: ({num_rows}, {num_cols})");
+    let mut app = if fs::exists("save.bin").unwrap_or(false) {
+        App::load_from_save_file()?
+    } else {
+        let (num_rows, num_cols) = settings.grid_size;
+        App::new(num_rows, num_cols)
+    };
 
-    if let Err(err) = ratatui::run(|terminal| App::new(num_rows, num_cols).run(terminal)) {
+    if let Err(err) = ratatui::run(|terminal| app.run(terminal)) {
         log::error!("ratatui ran into IO error: {}", err);
     }
 

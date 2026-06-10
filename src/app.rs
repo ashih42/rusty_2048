@@ -5,16 +5,22 @@ use ratatui::{
 };
 use std::io::{self, Stdout};
 
-use crate::{grid::Grid, move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
+use savefile::prelude::*;
 
-#[derive(Debug, PartialEq)]
+use crate::{
+    grid::Grid, move_direction::MoveDirection, my_error::MyError, tile::Tile, vector2d::Vector2D,
+};
+
+const SAVE_FILE_PATH: &str = "save.bin";
+
+#[derive(Debug, PartialEq, Savefile)]
 enum GameState {
     InPlay,
     Won,
     Lost,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Savefile)]
 pub struct App {
     should_show_grid: bool,
     should_exit: bool,
@@ -45,14 +51,28 @@ impl App {
         app
     }
 
+    pub fn load_from_save_file() -> Result<Self, MyError> {
+        load_file(SAVE_FILE_PATH, 0).map_err(|err| {
+            log::error!("Error loading save file: {}", err);
+
+            MyError::SaveDataError {
+                save_file_path: SAVE_FILE_PATH.to_string(),
+            }
+        })
+    }
+
+    fn save_and_exit(&mut self) {
+        if let Err(err) = save_file("save.bin", 0, self) {
+            log::error!("Failed to save game to file: {}", err);
+        }
+
+        self.should_exit = true;
+    }
+
     fn spawn_tile(&mut self) {
         if let Some(position) = self.grid.spawn_random_tile_at_random_location() {
             self.new_tile_positions.push(position);
         }
-    }
-
-    fn exit(&mut self) {
-        self.should_exit = true;
     }
 
     fn toggle_grid(&mut self) {
@@ -134,7 +154,7 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('q') => self.save_and_exit(),
             KeyCode::Char('r') => self.restart(),
             KeyCode::Char('g') => self.toggle_grid(),
             KeyCode::Char('w') | KeyCode::Up => self.tick(MoveDirection::Up),

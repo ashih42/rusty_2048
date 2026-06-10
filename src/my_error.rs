@@ -5,6 +5,7 @@ pub enum MyError {
     InvalidCommandLineArgumentsError,
     GridDimensionError(String),
     LoggerInitializationError(String),
+    SaveDataError { save_file_path: String },
 }
 
 impl Display for MyError {
@@ -19,6 +20,12 @@ impl Display for MyError {
                     tty_path
                 )
             }
+            Self::SaveDataError { save_file_path } => write!(
+                f,
+                "Failed to load from save data\n\
+                Recommendation: Delete the corrupted save data: {}",
+                save_file_path
+            ),
         }
     }
 }

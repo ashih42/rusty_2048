@@ -1,6 +1,7 @@
+use savefile::savefile_derive::Savefile;
 use std::ops::{Add, AddAssign};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Savefile)]
 pub struct Vector2D<T> {
     pub x: T,
     pub y: T,

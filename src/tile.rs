@@ -1,3 +1,4 @@
+use savefile::savefile_derive::Savefile;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -8,7 +9,7 @@ use std::{
 /// of the scalar multiplier value.
 ///
 /// Example: `Multiplier(3)` means multiply by 2^3, and it is displayed as `*8`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Savefile)]
 pub enum Tile {
     Empty,
     Number(u16),

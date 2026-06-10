@@ -1,5 +1,6 @@
 use itertools::Itertools;
-use rand::seq::IndexedRandom; // Bring trait into scope
+use rand::seq::IndexedRandom;
+use savefile::savefile_derive::Savefile;
 
 use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
@@ -16,7 +17,7 @@ use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
         .  32   .  16
 */
 
-#[derive(Debug)]
+#[derive(Debug, Savefile)]
 pub struct Grid {
     pub num_rows: usize,
     pub num_cols: usize,
