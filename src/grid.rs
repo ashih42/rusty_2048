@@ -117,20 +117,23 @@ impl Grid {
     /// and return that position.
     ///
     /// The type of tile created follows this probability distrubition:
-    /// - 60% chance to create a number tile, always with value = 2.
-    /// - 20% chance to create a multiplier tile, with 1 <= power <= 3.
-    /// - 20% chance to create a divider tile, with 1 <= power <= 3.
+    /// - 70% chance to create a number, always with value = 2.
+    /// - 10% chance to create a multiplier, with 1 <= power <= 3.
+    /// - 10% chance to create a divider, with 1 <= power <= 3.
+    /// - 10% chance to create a bomb.
     pub fn spawn_random_tile_at_random_location(&mut self) -> Option<Vector2D<usize>> {
         if let Some(position) = self.get_random_empty_position() {
             let x = rand::random_range(0..100);
             let power = rand::random_range(1..=3);
 
-            let tile = if x < 60 {
+            let tile = if x < 70 {
                 Tile::new_number(2)
             } else if x < 80 {
                 Tile::new_multiplier(power)
-            } else {
+            } else if x < 90 {
                 Tile::new_divider(power)
+            } else {
+                Tile::new_bomb()
             };
 
             self.set_tile(&position, tile);
