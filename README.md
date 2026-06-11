@@ -2,7 +2,7 @@
 
 This is my version of the [2048 Game](https://play2048.co/), built in Rust using the [Ratatui](https://ratatui.rs/) library.
 
-My game expands on the original 2048 game with many exciting new features, such as user-customizable grid size, enhanced gameplay with multiplier/divider tiles, and more to come.
+My game expands on the original 2048 game with many exciting new features, such as customizable large grid size, increased difficulty with endlessly spawning more than 1 new tiles each turn, enhanced gameplay with non-numeric tiles, ability to undo up to last 3 turns, loading from auto-save, and even an auto-play mode!
 
 Since this game is a [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) app, it has graphical limitations tied to the terminal emulator settings. Currently, there is no animation at all.
 
@@ -10,57 +10,67 @@ Since this game is a [TUI](https://en.wikipedia.org/wiki/Text-based_user_interfa
 
 You slide tiles to move and merge them into tiles with bigger numbers. To win, your goal is to make a tile with the value `2048`. You lose when the grid is full, and you can no longer affect the tiles in any way.
 
-## Gameplay Controls
-
-- Press `Q` (Quit) to exit.
-- Press `R` (Restart) to start a new game.
-- Press `G` (Grid) to toggle visibility of empty tiles.
-- Press `W`, `A`, `S`, `D` or `ARROW KEYS` to slide tiles in the grid.
-
-### Quick Tips
-
-- After opening the game, resize your terminal window until all tiles look the same size, and then press `G` to play with the grid off.
-
-- You may spam-click the same direction to keep the current grid state while waiting for the game to randomly spawn a new tile.
-
 ## How to Run
 
 ```
-cargo run -- [<num_rows> <num_cols>]
-```
+Run the game directly with optional command line flags.
+rusty_2048 [ <flag> ... ]
 
-`num_rows` and `num_cols` must be integers >= 2.
+Run the game from cargo with optional command line flags.
+cargo run -- [ <flag> ... ]
+
+Command line flags:
+  --help                            Show this usage page.
+  --load                            Load the game from save file.
+  --grid=<num_rows>,<num_cols>      Start the game with a specific grid size.
+  --tty=<tty_path>                  Enable logging to a specific tty.
+```
 
 ### Examples
 
-You can run the game with no arguments. This starts a game with the default grid size.
+You can run the game with no arguments. This starts a new game with the default grid size.
 
 ```
 cargo run
 ```
 
-You can run the game with your specific grid size.
+You can run the game with your own grid size.
 
 ```
-cargo run -- 6 8
+cargo run -- --grid=8,8
 ```
 
-### How to Run with Logging to Another TTY
+The game auto-saves on exit. You can run the game to continue from where you had left last time.
+
+```
+cargo run -- --load
+```
+
+### Dev Notes: How to Run with Logging to Another TTY
 
 1. In the terminal used for logging, use the `tty` command to find the TTY path for this terminal.
 
-2. In another terminal used for display this app, run the app with logging enabled for a specific TTY path.
+2. In another terminal used for display this app, run the app with logging enabled for this TTY path.
 
 ```
 RUST_LOG=info cargo run -- --tty=/dev/ttys000
 ```
 
+## Gameplay Controls
+
+```
+  [ Q ]                             Close the app.
+  [ R ]                             Start a new game.
+  [ G ]                             Toggle grid visibility on/off.
+  [ Z ]                             Toggle auto-play on/off.
+  [ WASD ] or [ ARROW KEYS ]        Move all tiles toward a direction.
+  [ BACKSPACE ]                     Undo last move (up to 3 turns ago).
+```
+
+### Quick Tips
+
+- After opening the game, resize your terminal window until all tiles look the same size, and then press `G` to play with the grid off.
+
 ## Possibly Upcoming Features
 
-- Add feature to undo/rollback to a previous turn state.
-- Add feature to auto-save current game state on exit
-- Add feature to auto-load the saved state on opening the game.
-- Add feature toggle on/off AI auto-play mode.
-  - AI may choose a direction randomly.
-  - AI may choose greedily the direction that produces a highest score in the immediate next turn.
-- Add animations?!
+- Add some kind of animations?!
