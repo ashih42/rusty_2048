@@ -112,10 +112,18 @@ impl AppSettings {
             cargo run -- [ <flag> ... ]
 
             Command line flags:
-            \t--help                              Show this usage page.
-            \t--load                              Load the game from save file.
-            \t--grid=<num_rows>,<num_cols>        Start the game with a specific grid size.
-            \t--tty=<tty_path>                    Enable logging to a specific tty.
+              --help                            Show this usage page.
+              --load                            Load the game from save file.
+              --grid=<num_rows>,<num_cols>      Start the game with a specific grid size.
+              --tty=<tty_path>                  Enable logging to a specific tty.
+
+            Keyboard Controls in Game:
+              [ Q ]                             Close the app.
+              [ R ]                             Start a new game.
+              [ G ]                             Toggle grid visibility on/off.
+              [ Z ]                             Toggle auto-play on/off.
+              [ WASD ] or [ ARROW KEYS ]        Move all tiles toward a direction.
+            
         "}
     }
 }
