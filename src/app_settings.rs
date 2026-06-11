@@ -89,20 +89,15 @@ impl AppSettings {
 
         let num_rows = Self::parse_grid_dimension(dimensions[0])?;
         let num_cols = Self::parse_grid_dimension(dimensions[1])?;
-
         Ok((num_rows, num_cols))
     }
 
     // Parse a single grid dimension, which must be a positive integer >= 2.
     fn parse_grid_dimension(input: &str) -> Result<usize, MyError> {
         match input.trim().parse::<usize>() {
-            Err(_) => Err(MyError::GridDimensionError(format!(
+            Err(_) | Ok(0 | 1) => Err(MyError::GridDimensionError(format!(
                 "Invalid grid dimension: {}\nGrid dimension must be an integer that is 2 or larger.",
                 input
-            ))),
-            Ok(0 | 1) => Err(MyError::GridDimensionError(format!(
-                "Invalid grid dimension: {}\nGrid dimension must be an integer that is 2 or larger.",
-                input,
             ))),
             Ok(n) => Ok(n),
         }
