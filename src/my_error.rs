@@ -7,6 +7,7 @@ pub enum MyError {
     LoggerInitializationFailed { tty_path: String },
     SaveFileNotFound { save_file_path: String },
     SaveFileFailedToLoad { save_file_path: String },
+    SaveFileFailedToSave { save_file_path: String },
 }
 
 impl Display for MyError {
@@ -35,6 +36,9 @@ impl Display for MyError {
                 "Failed to load from corrupted save file: {}",
                 save_file_path
             ),
+            Self::SaveFileFailedToSave { save_file_path } => {
+                write!(f, "Failed to save to file: {}", save_file_path)
+            }
         }
     }
 }

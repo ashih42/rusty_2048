@@ -28,7 +28,7 @@ impl App {
         // 1. Parse settings from command line arguments.
         let settings = AppSettings::try_from_command_line()?;
 
-        // If --help flag is provided, simply print usage and end here.
+        // If --help flag is set, simply print usage and end here.
         if settings.help {
             println!("{}", AppSettings::get_usage());
             return Ok(());
@@ -44,6 +44,9 @@ impl App {
         if let Err(err) = ratatui::run(|terminal| app.run_in_ratatui(terminal)) {
             log::error!("ratatui ran into IO error: {}", err);
         }
+
+        // 5. Save state to file.
+        app.save_state_to_file(DEFAULT_SAVE_FILE_PATH)?;
         Ok(())
     }
 
@@ -114,7 +117,7 @@ impl App {
     /// Listen to specific key input events.
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.save_state_to_file_and_exit(),
+            KeyCode::Char('q') => self.exit(),
             KeyCode::Char('r') => self.restart(),
             KeyCode::Char('g') => self.toggle_grid(),
             KeyCode::Backspace => self.undo(),
@@ -126,11 +129,15 @@ impl App {
         }
     }
 
-    fn save_state_to_file_and_exit(&mut self) {
-        if let Err(err) = save_file(DEFAULT_SAVE_FILE_PATH, 0, &self.state) {
-            log::error!("Failed to save game to file: {}", err);
-        }
+    fn save_state_to_file(&self, path: &str) -> Result<(), MyError> {
+        save_file(DEFAULT_SAVE_FILE_PATH, 0, &self.state).map_err(|_| {
+            MyError::SaveFileFailedToSave {
+                save_file_path: path.to_owned(),
+            }
+        })
+    }
 
+    fn exit(&mut self) {
         self.should_exit = true;
     }
 
