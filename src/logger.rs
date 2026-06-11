@@ -12,12 +12,12 @@ pub fn initialize_logger(tty_path: &Option<String>) -> Result<(), MyError> {
     match tty_path {
         Some(path) => {
             if !is_valid_tty(path) {
-                return Err(MyError::LoggerInitializationError {
+                return Err(MyError::LoggerInitializationFailed {
                     tty_path: path.clone(),
                 });
             }
 
-            let tty_file = File::create(path).map_err(|_| MyError::LoggerInitializationError {
+            let tty_file = File::create(path).map_err(|_| MyError::LoggerInitializationFailed {
                 tty_path: path.clone(),
             })?;
 

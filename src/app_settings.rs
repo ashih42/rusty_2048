@@ -3,12 +3,13 @@ use std::env;
 
 use crate::my_error::MyError;
 
-/// This data object contains data that are used before starting the app and/or
-/// relevant to building the app.
+/// AppSettings holds data that are used for initializing App, by parsing the command line arguments
+/// for relevant flags.
 ///
 /// Note: Some command line flags override other flags, if both are provided.
 /// - --help overrides everything, only showing the usage page, not running the app.
 /// - --load overrides --grid, loading the saved game (ignoring the specified grid size).
+#[derive(Debug)]
 pub struct AppSettings {
     pub help: bool,
     pub load_from_save_file: bool,
@@ -66,7 +67,7 @@ impl AppSettings {
                 self.tty_path = Some(tty_path.to_owned());
             }
             _ => {
-                return Err(MyError::InvalidCommandLineArgumentError {
+                return Err(MyError::InvalidCommandLineArgument {
                     arg: arg.to_owned(),
                 });
             }
@@ -81,10 +82,9 @@ impl AppSettings {
         let dimensions: Vec<&str> = input.split(',').collect();
 
         if dimensions.len() != 2 {
-            return Err(MyError::GridDimensionError(format!(
-                "Invalid grid dimensions: {}",
-                input
-            )));
+            return Err(MyError::InvalidGridSize {
+                expr: input.to_owned(),
+            });
         }
 
         let num_rows = Self::parse_grid_dimension(dimensions[0])?;
@@ -95,10 +95,9 @@ impl AppSettings {
     // Parse a single grid dimension, which must be a positive integer >= 2.
     fn parse_grid_dimension(input: &str) -> Result<usize, MyError> {
         match input.trim().parse::<usize>() {
-            Err(_) | Ok(0 | 1) => Err(MyError::GridDimensionError(format!(
-                "Invalid grid dimension: {}\nGrid dimension must be an integer that is 2 or larger.",
-                input
-            ))),
+            Err(_) | Ok(0 | 1) => Err(MyError::InvalidGridSize {
+                expr: input.to_owned(),
+            }),
             Ok(n) => Ok(n),
         }
     }

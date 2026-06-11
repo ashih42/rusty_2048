@@ -69,14 +69,14 @@ impl App {
         match fs::exists(path) {
             Ok(true) => (),
             Ok(false) | Err(_) => {
-                return Err(MyError::SaveFileNotFoundError {
+                return Err(MyError::SaveFileNotFound {
                     save_file_path: path.to_owned(),
                 });
             }
         }
 
         // 2. Read the file contents to construct an AppState instance.
-        load_file(path, 0).map_err(|_| MyError::SaveFileFailedToLoadError {
+        load_file(path, 0).map_err(|_| MyError::SaveFileFailedToLoad {
             save_file_path: path.to_owned(),
         })
     }
