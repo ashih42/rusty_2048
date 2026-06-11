@@ -1,8 +1,9 @@
 pub mod app;
 pub mod app_settings;
+mod app_state;
 mod grid;
-pub mod logger;
+mod logger;
 mod move_direction;
-pub mod my_error;
+mod my_error;
 mod tile;
 mod vector2d;
