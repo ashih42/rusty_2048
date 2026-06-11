@@ -8,14 +8,15 @@ use savefile::savefile_derive::Savefile;
 
 use crate::{grid::Grid, move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
-#[derive(Debug, PartialEq, Savefile)]
+#[derive(Clone, Debug, PartialEq, Savefile)]
 enum GameState {
     InPlay,
     Won,
     Lost,
 }
 
-#[derive(Debug, Savefile)]
+/// AppState manages the data that make up the business logic of this game.
+#[derive(Clone, Debug, Savefile)]
 pub struct AppState {
     should_show_grid: bool,
     should_exit: bool,

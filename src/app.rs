@@ -4,22 +4,24 @@ use savefile::{self, load_file, save_file};
 use std::fs;
 use std::io::{self, Stdout};
 
+use crate::bounded_stack::BoundedStack;
 use crate::{
     app_settings::AppSettings, app_state::AppState, logger, move_direction::MoveDirection,
     my_error::MyError,
 };
 
 const DEFAULT_SAVE_FILE_PATH: &str = "save.bin";
+const DEFAULT_PREV_STATES_STACK_CAPACITY: usize = 3;
 
+/// App is reponsible for initializing, loading, saving, and restoring its AppState.
 pub struct App {
     should_exit: bool,
     state: AppState,
+    old_states: BoundedStack<AppState>,
 }
 
-/// These are associated functions.
+/// These are the associated functions to indrectly create and run an app.
 impl App {
-    /// This is the public interface to indirectly create and run an app.
-    ///
     /// If user provided help flag, simply print usage and exit.
     /// Otherwise, create an app instance and run.
     pub fn run() -> Result<(), MyError> {
@@ -57,6 +59,7 @@ impl App {
         Ok(Self {
             should_exit: false,
             state,
+            old_states: BoundedStack::new(DEFAULT_PREV_STATES_STACK_CAPACITY),
         })
     }
 
@@ -79,7 +82,7 @@ impl App {
     }
 }
 
-/// These are instance methods.
+/// These are the instance methods.
 impl App {
     /// With `terminal` provided by ratatui, this runs forever until user input to exit.
     /// It is not clear what kind of IO error might occur when drawing to terminal or listening for events.
@@ -111,23 +114,49 @@ impl App {
     /// Listen to specific key input events.
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('q') => self.save_and_exit(),
-            KeyCode::Char('r') => self.state.restart(),
-            KeyCode::Char('g') => self.state.toggle_grid(),
-            KeyCode::Char('w') | KeyCode::Up => self.state.update(MoveDirection::Up),
-            KeyCode::Char('s') | KeyCode::Down => self.state.update(MoveDirection::Down),
-            KeyCode::Char('a') | KeyCode::Left => self.state.update(MoveDirection::Left),
-            KeyCode::Char('d') | KeyCode::Right => self.state.update(MoveDirection::Right),
+            KeyCode::Char('q') => self.save_state_to_file_and_exit(),
+            KeyCode::Char('r') => self.restart(),
+            KeyCode::Char('g') => self.toggle_grid(),
+            KeyCode::Backspace => self.undo(),
+            KeyCode::Char('w') | KeyCode::Up => self.update(MoveDirection::Up),
+            KeyCode::Char('s') | KeyCode::Down => self.update(MoveDirection::Down),
+            KeyCode::Char('a') | KeyCode::Left => self.update(MoveDirection::Left),
+            KeyCode::Char('d') | KeyCode::Right => self.update(MoveDirection::Right),
             _ => (),
         }
     }
 
-    /// Save state to file and then exit.
-    fn save_and_exit(&mut self) {
+    fn save_state_to_file_and_exit(&mut self) {
         if let Err(err) = save_file(DEFAULT_SAVE_FILE_PATH, 0, &self.state) {
             log::error!("Failed to save game to file: {}", err);
         }
 
         self.should_exit = true;
+    }
+
+    fn save_state_to_history(&mut self) {
+        self.old_states.push(self.state.clone());
+    }
+
+    /// Revert to the previous state if possible.
+    fn undo(&mut self) {
+        if let Some(prev_state) = self.old_states.pop() {
+            self.state = prev_state;
+        }
+    }
+
+    fn restart(&mut self) {
+        self.old_states.clear();
+        self.state.restart();
+    }
+
+    fn toggle_grid(&mut self) {
+        self.save_state_to_history();
+        self.state.toggle_grid();
+    }
+
+    fn update(&mut self, direction: MoveDirection) {
+        self.save_state_to_history();
+        self.state.update(direction);
     }
 }

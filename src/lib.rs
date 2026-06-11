@@ -1,6 +1,7 @@
 pub mod app;
 pub mod app_settings;
 mod app_state;
+mod bounded_stack;
 mod grid;
 mod logger;
 mod move_direction;

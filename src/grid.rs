@@ -17,7 +17,8 @@ use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
         .  32   .  16
 */
 
-#[derive(Debug, Savefile)]
+/// Grid is responsible for operations on its Tiles.
+#[derive(Clone, Debug, Savefile)]
 pub struct Grid {
     pub num_rows: usize,
     pub num_cols: usize,
