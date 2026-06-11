@@ -123,6 +123,7 @@ impl AppSettings {
               [ G ]                             Toggle grid visibility on/off.
               [ Z ]                             Toggle auto-play on/off.
               [ WASD ] or [ ARROW KEYS ]        Move all tiles toward a direction.
+              [ BACKSPACE ]                     Undo last move (up to 3 turns ago).
             
         "}
     }
