@@ -35,6 +35,9 @@ impl Grid {
     }
 
     /// Create a Grid from a string representation of all tiles.
+    ///
+    /// Currently, this is only used for unit-testing.
+    #[allow(dead_code)]
     fn from_snapshot(snapshot: &str) -> Self {
         let num_rows = snapshot.lines().count();
 
@@ -89,6 +92,9 @@ impl Grid {
     /// Return a string representation of the tiles,
     /// with a ' ' separating tiles within the same row, and
     /// with a '\n' separating tiles on different rows.
+    ///
+    /// Currently, this is only used for unit-testing.
+    #[allow(dead_code)]
     fn generate_snapshot(&self) -> String {
         let rows: Vec<&[Tile]> = self.tiles.chunks(self.num_cols).collect();
 

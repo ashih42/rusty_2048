@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 pub mod app;
 pub mod app_settings;
 mod grid;
