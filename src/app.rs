@@ -12,7 +12,7 @@ use crate::{
     grid::Grid, move_direction::MoveDirection, my_error::MyError, tile::Tile, vector2d::Vector2D,
 };
 
-const SAVE_FILE_PATH: &str = "save.bin";
+const DEFAULT_SAVE_FILE_PATH: &str = "save.bin";
 
 #[derive(Debug, PartialEq, Savefile)]
 enum GameState {
@@ -55,32 +55,18 @@ impl App {
     /// Try to construct an App from the save file, which should exist.
     pub fn try_from_save_file() -> Result<Self, MyError> {
         // 1. Check if save file exists.
-        match fs::exists(SAVE_FILE_PATH) {
+        match fs::exists(DEFAULT_SAVE_FILE_PATH) {
             Ok(true) => (),
-            Ok(false) => {
+            Ok(false) | Err(_) => {
                 return Err(MyError::SaveFileNotFoundError {
-                    save_file_path: SAVE_FILE_PATH.to_owned(),
-                });
-            }
-            Err(err) => {
-                log::error!(
-                    "File system could not determine if save file exists: {}\nError: {}",
-                    SAVE_FILE_PATH,
-                    err,
-                );
-                return Err(MyError::SaveFileNotFoundError {
-                    save_file_path: SAVE_FILE_PATH.to_owned(),
+                    save_file_path: DEFAULT_SAVE_FILE_PATH.to_owned(),
                 });
             }
         }
 
         // 2. Read the save file contents into an App.
-        load_file(SAVE_FILE_PATH, 0).map_err(|err| {
-            log::error!("Error loading save file: {}", err);
-
-            MyError::SaveFileFailedToLoadError {
-                save_file_path: SAVE_FILE_PATH.to_string(),
-            }
+        load_file(DEFAULT_SAVE_FILE_PATH, 0).map_err(|_| MyError::SaveFileFailedToLoadError {
+            save_file_path: DEFAULT_SAVE_FILE_PATH.to_owned(),
         })
     }
 
