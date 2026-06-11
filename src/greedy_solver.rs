@@ -13,7 +13,7 @@ pub struct GreedySolver {
 
 impl GreedySolver {
     pub fn new() -> Self {
-        const DEFAULT_TIME_TO_WAIT: Duration = Duration::from_millis(500);
+        const DEFAULT_TIME_TO_WAIT: Duration = Duration::from_millis(1000);
 
         Self {
             time_to_wait: DEFAULT_TIME_TO_WAIT,
