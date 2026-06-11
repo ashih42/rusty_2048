@@ -5,3 +5,10 @@ pub enum MoveDirection {
     Left,
     Right,
 }
+
+pub const ALL_DIRECTIONS: [MoveDirection; 4] = [
+    MoveDirection::Left,
+    MoveDirection::Right,
+    MoveDirection::Up,
+    MoveDirection::Down,
+];

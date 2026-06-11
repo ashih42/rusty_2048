@@ -113,6 +113,10 @@ impl AppState {
             self.game_state = GameState::Lost;
         }
     }
+
+    pub fn get_grid(&self) -> &Grid {
+        &self.grid
+    }
 }
 
 /// These operations use ratatui to update the view on the terminal.

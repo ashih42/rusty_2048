@@ -3,8 +3,11 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use savefile::{self, load_file, save_file};
 use std::fs;
 use std::io::{self, Stdout};
+use std::time::Duration;
 
 use crate::bounded_stack::BoundedStack;
+use crate::greedy_solver::GreedySolver;
+use crate::solver::Solver;
 use crate::{
     app_settings::AppSettings, app_state::AppState, logger, move_direction::MoveDirection,
     my_error::MyError,
@@ -13,11 +16,17 @@ use crate::{
 const DEFAULT_SAVE_FILE_PATH: &str = "save.bin";
 const DEFAULT_PREV_STATES_STACK_CAPACITY: usize = 3;
 
-/// App is reponsible for initializing, loading, saving, and restoring its AppState.
+/// App is reponsible for initializing, loading, saving, and restoring its AppState,
+/// agnostic of the business logic inside AppState.
+///
+/// Also, App handles the main loop, which draws to terminal, listens for user key events, and
+/// listens for input from solver.
 pub struct App {
     should_exit: bool,
+    solver_enabled: bool,
     state: AppState,
     old_states: BoundedStack<AppState>,
+    solver: Box<dyn Solver>,
 }
 
 /// These are the associated functions to indrectly create and run an app.
@@ -61,8 +70,10 @@ impl App {
 
         Ok(Self {
             should_exit: false,
+            solver_enabled: false,
             state,
             old_states: BoundedStack::new(DEFAULT_PREV_STATES_STACK_CAPACITY),
+            solver: Box::new(GreedySolver::new()),
         })
     }
 
@@ -96,21 +107,22 @@ impl App {
         while !self.should_exit {
             terminal.draw(|frame| self.state.render(frame))?;
             self.handle_events()?;
+            self.handle_solver_input();
         }
         Ok(())
     }
 
     /// Use crossterm to listen for user input from pressing down a key.
+    /// Current implementation polls (waits) for 100 milliseconds, and then moves on if no events were polled.
     fn handle_events(&mut self) -> io::Result<()> {
-        // Note: This is BLOCKING until an event occurs.
-        // This is fine for now, but this will need to be non-blocking for
-        // future animations or AI auto-play features
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
-            }
-            _ => (),
-        };
+        if event::poll(Duration::from_millis(100))? {
+            match event::read()? {
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    self.handle_key_event(key_event)
+                }
+                _ => (),
+            };
+        }
         Ok(())
     }
 
@@ -125,7 +137,16 @@ impl App {
             KeyCode::Char('s') | KeyCode::Down => self.update(MoveDirection::Down),
             KeyCode::Char('a') | KeyCode::Left => self.update(MoveDirection::Left),
             KeyCode::Char('d') | KeyCode::Right => self.update(MoveDirection::Right),
+            KeyCode::Char('z') => self.toggle_ai(),
             _ => (),
+        }
+    }
+
+    /// Listen for input from solver.
+    fn handle_solver_input(&mut self) {
+        if self.solver_enabled && self.solver.is_ready() {
+            let direction = self.solver.solve(&self.state);
+            self.update(direction);
         }
     }
 
@@ -160,6 +181,10 @@ impl App {
     fn toggle_grid(&mut self) {
         self.save_state_to_history();
         self.state.toggle_grid();
+    }
+
+    fn toggle_ai(&mut self) {
+        self.solver_enabled = !self.solver_enabled;
     }
 
     fn update(&mut self, direction: MoveDirection) {
