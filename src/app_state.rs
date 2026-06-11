@@ -165,7 +165,7 @@ impl AppState {
                 Block::default()
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(Color::Yellow))
-                    .title(" 2048 TUI "),
+                    .title(" Rusty 2048 "),
             )
             .style(Style::default().fg(Color::Yellow).bold());
         frame.render_widget(banner_widget, banner_area);
