@@ -43,13 +43,18 @@ impl AppState {
             new_tile_positions: Vec::new(),
         };
 
-        app.spawn_tile();
+        app.spawn_tiles();
         app
     }
 
-    fn spawn_tile(&mut self) {
-        if let Some(position) = self.grid.spawn_random_tile_at_random_location() {
-            self.new_tile_positions.push(position);
+    /// Spawn anywhere between 1 - 3 new tiles if possible.
+    fn spawn_tiles(&mut self) {
+        let num_spawns = rand::random_range(1..=3);
+
+        for _ in 0..num_spawns {
+            if let Some(position) = self.grid.spawn_random_tile_at_random_location() {
+                self.new_tile_positions.push(position);
+            }
         }
     }
 
@@ -65,7 +70,7 @@ impl AppState {
 
         self.grid.clear();
         self.new_tile_positions.clear();
-        self.grid.spawn_random_tile_at_random_location();
+        self.spawn_tiles();
     }
 
     /// This is the big logic update function, called after any gameplay event
@@ -80,14 +85,10 @@ impl AppState {
         let score = self.grid.handle_move(direction);
         self.update_scores(score);
         self.current_turn += 1;
-
         self.new_tile_positions.clear();
-
-        if rand::random() {
-            self.spawn_tile();
-        }
-
         self.check_if_won();
+
+        self.spawn_tiles();
         self.check_if_lost();
     }
 
