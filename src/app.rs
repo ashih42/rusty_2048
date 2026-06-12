@@ -6,7 +6,6 @@ use std::io::{self, Stdout};
 use std::time::Duration;
 
 use crate::bounded_stack::BoundedStack;
-use crate::greedy_solver::GreedySolver;
 use crate::renderer::Renderer;
 use crate::solver::Solver;
 use crate::{
@@ -28,7 +27,7 @@ pub struct App {
     old_states: BoundedStack<AppState>,
     renderer: Renderer,
     solver_enabled: bool,
-    solver: Box<dyn Solver>,
+    solver: Solver,
 }
 
 /// These are the associated functions to indrectly create and run an app.
@@ -76,7 +75,7 @@ impl App {
             old_states: BoundedStack::new(DEFAULT_OLD_STATES_STACK_CAPACITY),
             renderer: Renderer::default(),
             solver_enabled: false,
-            solver: Box::new(GreedySolver::new()),
+            solver: Solver::default(),
         })
     }
 
