@@ -6,6 +6,8 @@ My game expands on the original 2048 game with many exciting new features, such 
 
 Since this game is a [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) app, it has graphical limitations tied to the terminal emulator settings. Currently, there is no animation at all.
 
+![Demo](./doc/gameplay_demo.gif)
+
 ## Quick Explanation of Game
 
 You slide tiles to move and merge them into tiles with bigger numbers. To win, your goal is to make a tile with the value `2048`. You lose when the grid is full, and you can no longer affect the tiles in any way.
@@ -71,6 +73,6 @@ RUST_LOG=info cargo run -- --tty=/dev/ttys000
 
 - After opening the game, resize your terminal window until all tiles look the same size, and then press `G` to play with the grid off.
 
-## Possibly Upcoming Features
+## Architecture and Design
 
-- Add some kind of animations?!
+![Object Diagram](./doc/object_diagram.png)
