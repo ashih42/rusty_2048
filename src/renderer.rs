@@ -77,6 +77,7 @@ impl Renderer {
                     .title(" Rusty 2048 "),
             )
             .style(Style::default().fg(Color::Yellow).bold());
+
         frame.render_widget(banner_widget, banner_area);
     }
 
@@ -84,6 +85,7 @@ impl Renderer {
     fn render_grid(&self, frame: &mut Frame, grid_area: Rect, state: &AppState) {
         let (num_rows, num_cols) = (state.grid.num_rows, state.grid.num_cols);
 
+        // Split grid_area into rows.
         let row_constraints = (0..num_rows).map(|_| Constraint::Ratio(1, num_rows as u32));
         let rows = Layout::default()
             .direction(Direction::Vertical)
@@ -91,6 +93,7 @@ impl Renderer {
             .split(grid_area);
 
         for row_idx in 0..num_rows {
+            // Split each row into columns.
             let col_constraints = (0..num_cols).map(|_| Constraint::Ratio(1, num_cols as u32));
             let columns = Layout::default()
                 .direction(Direction::Horizontal)
@@ -98,6 +101,7 @@ impl Renderer {
                 .split(rows[row_idx]);
 
             for col_idx in 0..num_cols {
+                // Draw the tile at this row and this column.
                 let area = columns[col_idx];
                 let position = Vector2D::new(col_idx, row_idx);
                 let tile = state.grid.get_tile(&position);
@@ -110,44 +114,40 @@ impl Renderer {
 
     /// Draw one specific tile.
     fn render_tile(&self, frame: &mut Frame, area: Rect, tile: &Tile, is_new_tile: bool) {
-        let tile_str = self.get_tile_str(tile);
-        let tile_color = self.get_tile_color(tile);
-
-        let borders = if self.should_show_grid {
-            Borders::ALL
-        } else {
-            Borders::NONE
-        };
-
-        let text_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(50), Constraint::Min(1)])
-            .split(area);
-
         // 1. Draw the tile with solid filled color and a border if set by user.
         let container = Block::default()
-            .style(Style::default().bg(tile_color))
-            .borders(borders)
+            .style(Style::default().bg(self.get_tile_color(tile)))
+            .borders(if self.should_show_grid {
+                Borders::ALL
+            } else {
+                Borders::NONE
+            })
             .border_style(Style::default().fg(Color::White));
 
         frame.render_widget(container, area);
 
-        // 2. Render text at center of tile.
+        // Split area into 2 halves vertically.
+        let vertical_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Fill(1)])
+            .split(area);
+
+        // 2. Draw the tile text at center of tile.
         if !tile.is_empty() {
-            let text_widget = Paragraph::new(tile_str)
+            let text_widget = Paragraph::new(self.get_tile_str(tile))
                 .alignment(Alignment::Center)
                 .style(Style::default().fg(Color::White));
 
-            frame.render_widget(text_widget, text_layout[1]);
+            frame.render_widget(text_widget, vertical_layout[1]);
         }
 
-        // 3. Render new tile indicator text at top left corner of tile.
+        // 3. Draw a new tile indicator text at top left corner of tile.
         if is_new_tile {
             let new_tile_text_widget = Paragraph::new("NEW")
                 .alignment(Alignment::Left)
                 .style(Style::default().fg(Color::White).bold());
 
-            frame.render_widget(new_tile_text_widget, text_layout[0]);
+            frame.render_widget(new_tile_text_widget, vertical_layout[0]);
         }
     }
 
