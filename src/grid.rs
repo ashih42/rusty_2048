@@ -198,7 +198,7 @@ impl Grid {
     /// ```
     ///
     /// In this case, the score returned is (2 + 2) + (2 + 2) = 8.
-    pub fn handle_move(&mut self, direction: MoveDirection) -> i16 {
+    pub fn update(&mut self, direction: MoveDirection) -> i16 {
         self.generate_positional_rows(direction)
             .iter()
             .map(|row| {

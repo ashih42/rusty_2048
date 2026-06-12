@@ -61,7 +61,7 @@ impl AppState {
             return;
         }
 
-        let score = self.grid.handle_move(direction);
+        let score = self.grid.update(direction);
         self.update_scores(score);
         self.current_turn += 1;
         self.new_tile_positions.clear();

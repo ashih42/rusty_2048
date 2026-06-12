@@ -34,14 +34,14 @@ impl Solver for GreedySolver {
         }
     }
 
-    /// For each direction, simulate applying this direction on a new
-    /// and select the direction that yielded the highest score.
+    /// Try updating a new grid with each each direction,
+    /// and select the direction that produced the highest score.
     fn solve(&mut self, state: &AppState) -> MoveDirection {
         let (best_direction, _) = ALL_DIRECTIONS
             .iter()
             .map(|direction| {
                 let mut grid = state.grid.clone();
-                let score = grid.handle_move(*direction);
+                let score = grid.update(*direction);
                 (direction, score)
             })
             .max_by(|(_, a_score), (_, b_score)| a_score.cmp(b_score))
