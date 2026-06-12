@@ -1,9 +1,5 @@
 use savefile::savefile_derive::Savefile;
-use std::{
-    collections::HashMap,
-    fmt::Display,
-    sync::{LazyLock, Mutex},
-};
+use std::fmt::Display;
 
 /// Note: Multiplier and Divider variants store the base 2 power (aka exponent)
 /// of the scalar multiplier value.
@@ -56,54 +52,11 @@ impl Tile {
     }
 }
 
-/// These operations are related to obtaining a string representation from cache.
-impl Tile {
-    /// This getter method returns a cached string representation of the tile from a global cache.
-    /// If an entry doesn't exist, update the cache with the generated string value.
-    pub fn get_str(&self) -> &'static str {
-        let mut cache = TILE_STR_CACHE.lock().unwrap();
-
-        cache.entry(*self).or_insert_with(|| {
-            let value = self.get_fancy_string();
-            log::info!("Inserting in cache: {}", value);
-
-            Box::leak(value.into_boxed_str())
-        })
-    }
-}
-
-/// This cache maps a Tile to its string representation.
-static TILE_STR_CACHE: LazyLock<Mutex<HashMap<Tile, &'static str>>> = LazyLock::new(|| {
-    let common_tiles = [
-        Tile::new_empty(),
-        Tile::new_number(2),
-        Tile::new_number(4),
-        Tile::new_number(8),
-        Tile::new_number(16),
-        Tile::new_multiplier(1),
-        Tile::new_multiplier(2),
-        Tile::new_multiplier(3),
-        Tile::new_divider(1),
-        Tile::new_divider(2),
-        Tile::new_divider(3),
-        Tile::new_bomb(),
-    ];
-
-    let cache = HashMap::from(common_tiles.map(|tile| {
-        (
-            tile,
-            Box::leak(tile.get_fancy_string().into_boxed_str()) as &'static str,
-        )
-    }));
-
-    Mutex::new(cache)
-});
-
 /// These operations are related to defining string representations for the tile.
 impl Tile {
     /// Return a fancy string representation of the tile, which may include
     /// emojis and other unicode characters.
-    fn get_fancy_string(&self) -> String {
+    pub fn get_fancy_string(&self) -> String {
         match self {
             Self::Empty => String::from(""),
             Self::Number(value) => value

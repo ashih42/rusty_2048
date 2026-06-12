@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use crate::bounded_stack::BoundedStack;
 use crate::greedy_solver::GreedySolver;
+use crate::renderer::Renderer;
 use crate::solver::Solver;
 use crate::{
     app_settings::AppSettings, app_state::AppState, logger, move_direction::MoveDirection,
@@ -14,7 +15,7 @@ use crate::{
 };
 
 const DEFAULT_SAVE_FILE_PATH: &str = "save.bin";
-const DEFAULT_PREV_STATES_STACK_CAPACITY: usize = 3;
+const DEFAULT_OLD_STATES_STACK_CAPACITY: usize = 3;
 
 /// App is reponsible for initializing, loading, saving, and restoring its AppState,
 /// agnostic of the business logic inside AppState.
@@ -23,9 +24,10 @@ const DEFAULT_PREV_STATES_STACK_CAPACITY: usize = 3;
 /// listens for input from solver.
 pub struct App {
     should_exit: bool,
-    solver_enabled: bool,
     state: AppState,
     old_states: BoundedStack<AppState>,
+    renderer: Renderer,
+    solver_enabled: bool,
     solver: Box<dyn Solver>,
 }
 
@@ -70,9 +72,10 @@ impl App {
 
         Ok(Self {
             should_exit: false,
-            solver_enabled: false,
             state,
-            old_states: BoundedStack::new(DEFAULT_PREV_STATES_STACK_CAPACITY),
+            old_states: BoundedStack::new(DEFAULT_OLD_STATES_STACK_CAPACITY),
+            renderer: Renderer::default(),
+            solver_enabled: false,
             solver: Box::new(GreedySolver::new()),
         })
     }
@@ -105,7 +108,7 @@ impl App {
         terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     ) -> io::Result<()> {
         while !self.should_exit {
-            terminal.draw(|frame| self.state.render(frame))?;
+            terminal.draw(|frame| self.renderer.render(frame, &self.state))?;
             self.handle_events()?;
             self.handle_solver_input();
         }
@@ -179,8 +182,7 @@ impl App {
     }
 
     fn toggle_grid(&mut self) {
-        self.save_state_to_history();
-        self.state.toggle_grid();
+        self.renderer.toggle_grid();
     }
 
     fn toggle_ai(&mut self) {

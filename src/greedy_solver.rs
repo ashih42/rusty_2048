@@ -40,7 +40,7 @@ impl Solver for GreedySolver {
         let (best_direction, _) = ALL_DIRECTIONS
             .iter()
             .map(|direction| {
-                let mut grid = state.get_grid().clone();
+                let mut grid = state.grid.clone();
                 let score = grid.handle_move(*direction);
                 (direction, score)
             })
