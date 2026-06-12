@@ -8,20 +8,29 @@ use ratatui::{
 
 use crate::{app_state::AppState, game_state::GameState, tile::Tile, vector2d::Vector2D};
 
-#[derive(Default)]
 pub struct Renderer {
     should_show_grid: bool,
     tile_string_cache: FrozenMap<Tile, Box<str>>,
 }
 
+impl Default for Renderer {
+    fn default() -> Self {
+        Self {
+            should_show_grid: true,
+            tile_string_cache: FrozenMap::new(),
+        }
+    }
+}
+
 impl Renderer {
-    pub fn toggle_grid(&mut self) {
+    pub fn toggle_grid_visibility(&mut self) {
         self.should_show_grid = !self.should_show_grid;
     }
 
+    /// Update the terminal display with the current state.
     pub fn render(&self, frame: &mut Frame, state: &AppState) {
-        // 1. Split screen into a top banner and a bottom grid area.
-        let (total_area, banner_area, grid_area) = self.split_area(frame);
+        // 1. Split screen into areas.
+        let (total_area, banner_area, grid_area) = self.split_areas(frame);
 
         // 2. Render the top banner.
         self.render_banner(frame, banner_area, state);
@@ -33,7 +42,9 @@ impl Renderer {
         self.render_game_over_popup(frame, total_area, state);
     }
 
-    fn split_area(&self, frame: &Frame) -> (Rect, Rect, Rect) {
+    /// Split the entire terminal screen space into a thin top banner area, and let the large remaining bottom area
+    /// be the grid area.  Return 3 areas: the total area, the bannera area, and the grid area.
+    fn split_areas(&self, frame: &Frame) -> (Rect, Rect, Rect) {
         let total_area = frame.area();
 
         let main_chunks = Layout::default()
@@ -50,6 +61,7 @@ impl Renderer {
         (total_area, banner_area, grid_area)
     }
 
+    /// Draw the banner area, showing the current turn, current score, and highest score.
     fn render_banner(&self, frame: &mut Frame, banner_area: Rect, state: &AppState) {
         let banner_text = format!(
             " Turn: {}    |    Score: {}    |    High Score: {} ",
@@ -68,6 +80,7 @@ impl Renderer {
         frame.render_widget(banner_widget, banner_area);
     }
 
+    /// Draw the grid area with all tiles.
     fn render_grid(&self, frame: &mut Frame, grid_area: Rect, state: &AppState) {
         let (num_rows, num_cols) = (state.grid.num_rows, state.grid.num_cols);
 
@@ -85,45 +98,56 @@ impl Renderer {
                 .split(rows[row_idx]);
 
             for col_idx in 0..num_cols {
+                let area = columns[col_idx];
                 let position = Vector2D::new(col_idx, row_idx);
                 let tile = state.grid.get_tile(&position);
-                let tile_str = self.get_tile_str(tile);
-                let border_color = self.get_tile_color(tile);
+                let is_new_tile = state.new_tile_positions.contains(&position);
 
-                let tile_block = Block::default()
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(border_color));
-
-                let tile_area = tile_block.inner(columns[col_idx]);
-                let text_layout = Layout::default()
-                    .direction(Direction::Vertical)
-                    .constraints([Constraint::Percentage(50), Constraint::Min(1)])
-                    .split(tile_area);
-
-                let text_widget = Paragraph::new(tile_str)
-                    .alignment(Alignment::Center)
-                    .style(Style::default().fg(Color::White).bold());
-
-                let new_tile_text_widget = Paragraph::new("NEW")
-                    .alignment(Alignment::Left)
-                    .style(Style::default().fg(Color::White).bold());
-
-                // Render text for all non-empty tiles.
-                if !tile.is_empty() {
-                    frame.render_widget(text_widget, text_layout[1]);
-
-                    // Render text indicating this tile just spawned on this turn.
-                    if state.new_tile_positions.contains(&position) {
-                        frame.render_widget(new_tile_text_widget, text_layout[0]);
-                    }
-                }
-
-                // Render borders for all non-empty tiles, and
-                // render borders for empty tiles only if a grid visibility flag is set.
-                if self.should_show_grid || !tile.is_empty() {
-                    frame.render_widget(tile_block, columns[col_idx]);
-                }
+                self.render_tile(frame, area, tile, is_new_tile);
             }
+        }
+    }
+
+    /// Draw one specific tile.
+    fn render_tile(&self, frame: &mut Frame, area: Rect, tile: &Tile, is_new_tile: bool) {
+        let tile_str = self.get_tile_str(tile);
+        let tile_color = self.get_tile_color(tile);
+
+        let borders = if self.should_show_grid {
+            Borders::ALL
+        } else {
+            Borders::NONE
+        };
+
+        let text_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Min(1)])
+            .split(area);
+
+        // 1. Draw the tile with solid filled color and a border if set by user.
+        let container = Block::default()
+            .style(Style::default().bg(tile_color))
+            .borders(borders)
+            .border_style(Style::default().fg(Color::White));
+
+        frame.render_widget(container, area);
+
+        // 2. Render text at center of tile.
+        if !tile.is_empty() {
+            let text_widget = Paragraph::new(tile_str)
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::White));
+
+            frame.render_widget(text_widget, text_layout[1]);
+        }
+
+        // 3. Render new tile indicator text at top left corner of tile.
+        if is_new_tile {
+            let new_tile_text_widget = Paragraph::new("NEW")
+                .alignment(Alignment::Left)
+                .style(Style::default().fg(Color::White).bold());
+
+            frame.render_widget(new_tile_text_widget, text_layout[0]);
         }
     }
 
@@ -131,7 +155,7 @@ impl Renderer {
     /// Reference: https://ratatui.rs/examples/style/colors/
     fn get_tile_color(&self, tile: &Tile) -> Color {
         match tile {
-            Tile::Empty => Color::Gray,
+            Tile::Empty => Color::Black,
             Tile::Multiplier(_) => Color::Green,
             Tile::Divider(_) => Color::Red,
             Tile::Bomb => Color::Red,
@@ -162,9 +186,10 @@ impl Renderer {
             .insert(*tile, tile.get_fancy_string().into())
     }
 
+    /// Draw a popup window that shows a victory or defeat message.
     fn render_game_over_popup(&self, frame: &mut Frame, total_area: Rect, state: &AppState) {
         if matches!(state.game_state, GameState::Won | GameState::Lost) {
-            // 4. Render the centered "YOU WIN" popup box overlay
+            // Render the centered "YOU WIN" popup box overlay
             // Set size parameters for the popup box (30 columns wide, 6 rows high)
             let popup_area = self.centered_rect(30, 6, total_area);
 

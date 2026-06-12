@@ -134,7 +134,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('r') => self.restart(),
-            KeyCode::Char('g') => self.toggle_grid(),
+            KeyCode::Char('g') => self.toggle_grid_visibility(),
             KeyCode::Backspace => self.undo(),
             KeyCode::Char('w') | KeyCode::Up => self.update(MoveDirection::Up),
             KeyCode::Char('s') | KeyCode::Down => self.update(MoveDirection::Down),
@@ -181,8 +181,8 @@ impl App {
         self.state.restart();
     }
 
-    fn toggle_grid(&mut self) {
-        self.renderer.toggle_grid();
+    fn toggle_grid_visibility(&mut self) {
+        self.renderer.toggle_grid_visibility();
     }
 
     fn toggle_ai(&mut self) {
