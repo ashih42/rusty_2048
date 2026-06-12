@@ -7,7 +7,7 @@ mod greedy_solver;
 mod grid;
 mod logger;
 mod move_direction;
-mod my_error;
+pub mod my_error;
 mod solver;
 mod tile;
 mod vector2d;
