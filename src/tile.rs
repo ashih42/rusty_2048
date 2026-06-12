@@ -105,7 +105,7 @@ impl Tile {
     /// emojis and other unicode characters.
     fn get_fancy_string(&self) -> String {
         match self {
-            Self::Empty => String::from(" "),
+            Self::Empty => String::from(""),
             Self::Number(value) => value
                 .to_string()
                 .chars()
