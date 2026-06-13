@@ -685,10 +685,3 @@ mod tests {
         }
     }
 }
-
-#[test]
-fn test_ilog2() {
-    let num: u32 = 0;
-    let result = num.ilog2();
-    println!("ilog2 of {} is {}", num, result);
-}
