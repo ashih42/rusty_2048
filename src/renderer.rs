@@ -183,7 +183,7 @@ impl Renderer {
         }
 
         self.tile_string_cache
-            .insert(*tile, tile.get_fancy_string().into())
+            .insert(*tile, tile.as_fancy_string().into())
     }
 
     /// Draw a popup window that shows a victory or defeat message.

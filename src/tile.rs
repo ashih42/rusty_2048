@@ -56,7 +56,7 @@ impl Tile {
 impl Tile {
     /// Return a fancy string representation of the tile, which may include
     /// emojis and other unicode characters.
-    pub fn get_fancy_string(&self) -> String {
+    pub fn as_fancy_string(&self) -> String {
         match self {
             Self::Empty => String::from(""),
             Self::Number(value) => value
