@@ -4,20 +4,23 @@ use savefile::savefile_derive::Savefile;
 
 use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
-/*
-    +-------> x
-    |
-    |
-    V
-    y
-
-    For example, in this map with num_rows=2, num_cols=4, '4' is at position x=2, y=0.
-
-        .   .   4   .
-        .  32   .  16
-*/
-
 /// Grid is responsible for operations on its Tiles.
+///
+/// The x and y coordinates of tile position follows the same convention in the ratatui library.
+///
+/// ```ignore
+///   +-------> x
+///   |
+///   V
+///   y
+/// ```
+///
+/// For example, in this map with num_rows=2, num_cols=4, '4' is at position x=2, y=0.
+///
+/// ```ignore
+/// .   .   4   .
+/// .  32   .  16
+/// ```
 #[derive(Clone, Debug, Savefile)]
 pub struct Grid {
     pub num_rows: usize,
