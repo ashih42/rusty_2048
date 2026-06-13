@@ -91,11 +91,13 @@ impl From<&str> for Tile {
             "." => Self::new_empty(),
             "B" => Self::new_bomb(),
             _ if s.starts_with("*") => {
-                let power = s[1..].parse::<u8>().unwrap();
+                let scalar = s[1..].parse::<u16>().unwrap();
+                let power = scalar.ilog2() as u8;
                 Self::new_multiplier(power)
             }
             _ if s.starts_with("/") => {
-                let power = s[1..].parse::<u8>().unwrap();
+                let scalar = s[1..].parse::<u16>().unwrap();
+                let power = scalar.ilog2() as u8;
                 Self::new_divider(power)
             }
             _ => {
@@ -277,6 +279,15 @@ impl Tile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_from_str() {
+        assert_eq!(Tile::from("."), Tile::new_empty());
+        assert_eq!(Tile::from("64"), Tile::new_number(64));
+        assert_eq!(Tile::from("*8"), Tile::new_multiplier(3));
+        assert_eq!(Tile::from("/2"), Tile::new_divider(1));
+        assert_eq!(Tile::from("B"), Tile::new_bomb());
+    }
 
     #[test]
     fn test_are_mergeable() {
@@ -673,4 +684,11 @@ mod tests {
             assert_eq!(score, 0);
         }
     }
+}
+
+#[test]
+fn test_ilog2() {
+    let num: u32 = 0;
+    let result = num.ilog2();
+    println!("ilog2 of {} is {}", num, result);
 }
