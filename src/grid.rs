@@ -93,13 +93,38 @@ impl Grid {
     /// with a ' ' separating tiles within the same row, and
     /// with a '\n' separating tiles on different rows.
     ///
-    /// Currently, this is only used for unit-testing.
+    /// This is only used for unit-testing.
     #[allow(dead_code)]
-    fn generate_snapshot(&self) -> String {
+    pub fn generate_snapshot(&self) -> String {
         let rows: Vec<&[Tile]> = self.tiles.chunks(self.num_cols).collect();
 
         rows.iter()
             .map(|row| row.iter().map(|tile| tile.to_string()).join(" "))
+            .join("\n")
+    }
+
+    /// Return a string representation of the tiles, with a fixed width between columns,
+    /// so it is easier to read when debugging.
+    ///
+    /// This is only used for unit-testing.
+    #[allow(dead_code)]
+    pub fn generate_pretty_snapshot(&self) -> String {
+        const TILE_STR_WIDTH: usize = 8;
+
+        let rows: Vec<&[Tile]> = self.tiles.chunks(self.num_cols).collect();
+
+        rows.iter()
+            .map(|row| {
+                row.iter()
+                    .map(|tile| {
+                        let s = format!("{:>TILE_STR_WIDTH$}", tile.to_string());
+
+                        // println!("tile: |{}|", s);
+
+                        s
+                    })
+                    .join(" ")
+            })
             .join("\n")
     }
 
@@ -365,7 +390,8 @@ mod tests {
     fn print_grid(grid: &Grid) {
         println!("num_rows: {}", grid.num_rows);
         println!("num_cols: {}", grid.num_cols);
-        println!("snapshot:\n{}\n", grid.generate_snapshot());
+        println!("\nsnapshot:\n{}\n", grid.generate_snapshot());
+        println!("pretty snapshot:\n{}\n", grid.generate_pretty_snapshot());
     }
 
     #[test]
@@ -517,5 +543,35 @@ mod tests {
                 vec![Vector2D::new(3, 1), Vector2D::new(3, 0)],
             ]
         );
+    }
+
+    #[test]
+    fn test_is_dead() {
+        // Grid with empty tiles is not dead.
+        {
+            let snapshot = "\
+            .   .   4
+            .  32   .";
+            let grid = Grid::from_snapshot(snapshot);
+            assert!(!grid.is_dead());
+        }
+
+        // Grid with no empty tiles but with possible merges is not dead.
+        {
+            let snapshot = "\
+            2   8   4
+            8  32   4";
+            let grid = Grid::from_snapshot(snapshot);
+            assert!(!grid.is_dead());
+        }
+
+        // Grid with no empty tiles and no possible merges isdead.
+        {
+            let snapshot = "\
+            2    8   4
+            16  32  64";
+            let grid = Grid::from_snapshot(snapshot);
+            assert!(grid.is_dead());
+        }
     }
 }

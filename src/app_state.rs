@@ -15,19 +15,35 @@ pub struct AppState {
 }
 
 impl AppState {
+    const DEFAULT_WINNING_TARGET: u16 = 2048;
+
     pub fn new(num_rows: usize, num_cols: usize) -> Self {
         let mut app = Self {
             game_state: GameState::InPlay,
             current_turn: 1,
             current_score: 0,
             best_score: 0,
-            winning_target: 2048,
+            winning_target: Self::DEFAULT_WINNING_TARGET,
             grid: Grid::new(num_rows, num_cols),
             new_tile_positions: Vec::new(),
         };
 
         app.spawn_tiles();
         app
+    }
+
+    /// This is used for unit testing.
+    #[allow(dead_code)]
+    pub fn with_grid(grid: Grid) -> Self {
+        Self {
+            game_state: GameState::InPlay,
+            current_turn: 1,
+            current_score: 0,
+            best_score: 0,
+            winning_target: Self::DEFAULT_WINNING_TARGET,
+            grid,
+            new_tile_positions: Vec::new(),
+        }
     }
 
     /// Spawn anywhere between 1 - 3 new tiles if possible.

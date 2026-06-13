@@ -85,7 +85,7 @@ impl Tile {
 
 impl From<&str> for Tile {
     /// Construct a tile from a string containing only ascii characters.
-    /// This is only used for unit testing, so it is okay to assume input string is valid and unwrap the result.
+    /// This is only used for unit-testing, so it is okay to assume input string is valid and unwrap the result.
     fn from(s: &str) -> Self {
         match s {
             "." => Self::new_empty(),
