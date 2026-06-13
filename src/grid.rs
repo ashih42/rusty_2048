@@ -36,16 +36,15 @@ impl Grid {
     }
 
     /// Create a Grid from a string representation of all tiles.
-    ///
-    /// Currently, this is only used for unit-testing.
+    /// This is only used for unit testing, so it is okay to assume input string is valid and unwrap the result.
     #[allow(dead_code)]
-    fn from_snapshot(snapshot: &str) -> Self {
+    pub fn from_snapshot(snapshot: &str) -> Self {
         let num_rows = snapshot.lines().count();
 
         let first_row = snapshot.lines().next().unwrap();
         let num_cols = first_row.split_whitespace().count();
 
-        let tiles = snapshot.split_whitespace().map(Tile::from_str).collect();
+        let tiles = snapshot.split_whitespace().map(|s| s.into()).collect();
 
         Self {
             num_rows,

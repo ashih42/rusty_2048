@@ -81,17 +81,15 @@ impl Tile {
             Self::Bomb => String::from("💣"),
         }
     }
+}
 
-    /// Construct a tile from an input string containing only ascii characters.
-    /// The input string must be valid.
-    ///
-    /// Currently, this is only used for unit-testing.  Consider implementing the FromStr trait
-    /// and handle error cases instead, if this operation becomes necessary
-    /// in the upcoming feature of loading a save file.
-    #[allow(dead_code)]
-    pub fn from_str(s: &str) -> Self {
+impl From<&str> for Tile {
+    /// Construct a tile from a string containing only ascii characters.
+    /// This is only used for unit testing, so it is okay to assume input string is valid and unwrap the result.
+    fn from(s: &str) -> Self {
         match s {
             "." => Self::new_empty(),
+            "B" => Self::new_bomb(),
             _ if s.starts_with("*") => {
                 let power = s[1..].parse::<u8>().unwrap();
                 Self::new_multiplier(power)
