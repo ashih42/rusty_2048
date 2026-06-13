@@ -57,18 +57,79 @@ fn solve_by_random(_: &AppState) -> MoveDirection {
     ALL_DIRECTIONS.choose(&mut rand::rng()).copied().unwrap()
 }
 
-/// Try updating a new grid with each each direction,
-/// and select the direction that produced the highest score.
+/// Try each direction, and only look at the resulting score, and if the direction won the game.
 fn solve_by_greedy(state: &AppState) -> MoveDirection {
-    let (best_direction, _) = ALL_DIRECTIONS
+    // Try each direction, and record the (direction, score, won) data for each direction.
+    let trials: Vec<(MoveDirection, i16, bool)> = ALL_DIRECTIONS
         .iter()
         .map(|direction| {
             let mut grid = state.grid.clone();
             let score = grid.update(*direction);
-            (direction, score)
+            let won = grid.contains_value(state.winning_target);
+            (*direction, score, won)
         })
-        .max_by(|(_, a_score), (_, b_score)| a_score.cmp(b_score))
+        .collect();
+
+    // If there are any directions that won the game, select one among them that produced the highest score.
+    if let Some(winner) = trials
+        .iter()
+        .filter(|(_, _, won)| *won)
+        .max_by(|(_, a_score, _), (_, b_score, _)| a_score.cmp(b_score))
+    {
+        return winner.0;
+    }
+
+    // Otherwise, select one among all directions that produced the highest score.
+    let winner = trials
+        .iter()
+        .max_by(|(_, a_score, _), (_, b_score, _)| a_score.cmp(b_score))
         .unwrap();
 
-    *best_direction
+    winner.0
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::grid::Grid;
+
+    use super::*;
+
+    #[test]
+    fn test_solve_by_greedy() {
+        // No winner. Simply pick the direction with highest score.
+        {
+            let snapshot = "\
+             .   .    B   .
+            *2   .    2  *8
+             .   .   *4   .";
+            let grid = Grid::from_snapshot(snapshot);
+            let state = AppState::with_grid(grid);
+
+            assert_eq!(solve_by_greedy(&state), MoveDirection::Right);
+        }
+
+        // Pick the direction that won but produced a lower score than a non-winner.
+        {
+            let snapshot = "\
+             .   .      B   .
+            *2   .    512  *8
+            .    .     *4   .";
+            let grid = Grid::from_snapshot(snapshot);
+            let state = AppState::with_grid(grid);
+
+            assert_eq!(solve_by_greedy(&state), MoveDirection::Down);
+        }
+
+        // Among 2 winners, pick the direction with the highest score.
+        {
+            let snapshot = "\
+             2   .     *4   .
+            *2   .    512  *8
+             B   .     *4   .";
+            let grid = Grid::from_snapshot(snapshot);
+            let state = AppState::with_grid(grid);
+
+            assert_eq!(solve_by_greedy(&state), MoveDirection::Up);
+        }
+    }
 }
