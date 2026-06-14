@@ -73,6 +73,6 @@ RUST_LOG=info cargo run -- --tty=/dev/ttys000
 
 - After opening the game, resize your terminal window until all tiles look the same size, and then press `G` to play with the grid off.
 
-## Architecture and Design
+## Entity Relation Diagram
 
-![Object Diagram](./doc/object_diagram.png)
+![Entity Relation Diagram](./doc/entity_relation_diagram.png)
