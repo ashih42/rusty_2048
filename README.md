@@ -65,9 +65,9 @@ cargo run -- --load
 
 ## Developer Notes
 
-### Entity Relation Diagram
+### Entity Relationship Diagram
 
-![Entity Relation Diagram](./doc/entity_relation_diagram.png)
+![Entity Relationship Diagram](./doc/entity_relationship_diagram.png)
 
 ### How to Run App with Logging to Another TTY
 
