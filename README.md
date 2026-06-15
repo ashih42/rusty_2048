@@ -48,18 +48,6 @@ The game auto-saves on exit. You can run the game to continue from where you had
 cargo run -- --load
 ```
 
-### Dev Notes: How to Run with Logging to Another TTY
-
-This is a convenience feature for the developer to see logging on Terminal 2, while the app takes up the display on Terminal 1.
-
-1. In Terminal 2 (for logging), use the `tty` command to find the TTY path for this terminal.
-
-2. In Terminal 1 (for displaying this app), run the app with logging enabled for the TTY path of Terminal 2.
-
-```
-RUST_LOG=info cargo run -- --tty=/dev/ttys000
-```
-
 ## Gameplay Controls
 
 ```
@@ -75,6 +63,26 @@ RUST_LOG=info cargo run -- --tty=/dev/ttys000
 
 - After opening the game, resize your terminal window until all tiles look the same size, and then press `G` to play with the grid off.
 
-## Entity Relation Diagram
+## Developer Notes
+
+### Entity Relation Diagram
 
 ![Entity Relation Diagram](./doc/entity_relation_diagram.png)
+
+### How to Run App with Logging to Another TTY
+
+This is a convenience feature for the developer to see logging on Terminal 2, while the app is displayed on Terminal 1.
+
+1. In Terminal 2 (for logging), use the `tty` command to find the TTY path for this terminal.
+
+2. In Terminal 1 (for displaying this app), run the app with logging routed to the TTY path of Terminal 2.
+
+```
+RUST_LOG=info cargo run -- --tty=/dev/ttys000
+```
+
+### How to Create Documentation
+
+```
+cargo doc --document-private-items --open
+```
