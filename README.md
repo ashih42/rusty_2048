@@ -10,7 +10,7 @@ Since this game is a [TUI](https://en.wikipedia.org/wiki/Text-based_user_interfa
 
 ## Quick Explanation of Game
 
-You slide tiles to move and merge them into tiles with bigger numbers. To win, your goal is to make a tile with the value `2048`. You lose when the grid is full, and you can no longer affect the tiles in any way.
+You slide tiles to move and merge any 2 adjacent tiles with same numbers into a tile with a bigger number. To win, your goal is to make a tile with the number `2048`. You lose when the grid is full, and you can no longer affect the tiles in any way.
 
 ## How to Run
 
@@ -23,7 +23,7 @@ cargo run -- [ <flag> ... ]
 
 Command line flags:
   --help                            Show this usage page.
-  --load                            Load the game from save file.
+  --load                            Load the game from auto-save.
   --grid=<num_rows>,<num_cols>      Start the game with a specific grid size.
   --tty=<tty_path>                  Enable logging to a specific tty.
 ```
@@ -50,9 +50,11 @@ cargo run -- --load
 
 ### Dev Notes: How to Run with Logging to Another TTY
 
-1. In the terminal used for logging, use the `tty` command to find the TTY path for this terminal.
+This is a convenience feature for the developer to see logging on Terminal 2, while the app takes up the display on Terminal 1.
 
-2. In another terminal used for display this app, run the app with logging enabled for this TTY path.
+1. In Terminal 2 (for logging), use the `tty` command to find the TTY path for this terminal.
+
+2. In Terminal 1 (for displaying this app), run the app with logging enabled for the TTY path of Terminal 2.
 
 ```
 RUST_LOG=info cargo run -- --tty=/dev/ttys000

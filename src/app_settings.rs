@@ -113,7 +113,7 @@ impl AppSettings {
 
             Command line flags:
               --help                            Show this usage page.
-              --load                            Load the game from save file.
+              --load                            Load the game from auto-save.
               --grid=<num_rows>,<num_cols>      Start the game with a specific grid size.
               --tty=<tty_path>                  Enable logging to a specific tty.
 
