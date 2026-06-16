@@ -60,7 +60,6 @@ fn solve_by_random(_: &AppState) -> MoveDirection {
 /// Try each direction, record the resulting score, and check if the resulting grid state won the game.
 /// Return the direction that maximizes these 2 constraints, with the highest `won`, then the highest `score`.
 fn solve_by_greedy(state: &AppState) -> MoveDirection {
-    // Try each direction, and record the (direction, score, won) data for each direction.
     ALL_DIRECTIONS
         .iter()
         .map(|&direction| {
