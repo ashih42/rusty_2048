@@ -3,7 +3,7 @@ use std::env;
 
 use crate::my_error::MyError;
 
-/// AppSettings holds data that are used for initializing App, by parsing the command line arguments
+/// `AppSettings` holds data that are used for initializing `App`, by parsing the command line arguments
 /// for relevant flags.
 ///
 /// Note: Some command line flags override other flags, if both are provided.
@@ -71,13 +71,13 @@ impl AppSettings {
                     arg: arg.to_owned(),
                 });
             }
-        };
+        }
 
         Ok(())
     }
 
     /// Parse the grid dimensions (2 numbers).
-    /// Example input format: "NUM_ROWS,NUM_COLS"
+    /// Example input format: `NUM_ROWS,NUM_COLS`
     fn parse_grid_size(input: &str) -> Result<(usize, usize), MyError> {
         let dimensions: Vec<&str> = input.split(',').collect();
 
@@ -102,7 +102,8 @@ impl AppSettings {
         }
     }
 
-    pub fn get_usage() -> &'static str {
+    #[must_use]
+    pub const fn get_usage() -> &'static str {
         indoc! {"
             Usage:
             Run the game directly with optional command line flags.

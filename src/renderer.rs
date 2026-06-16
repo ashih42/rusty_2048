@@ -23,7 +23,7 @@ impl Default for Renderer {
 }
 
 impl Renderer {
-    pub fn toggle_grid_visibility(&mut self) {
+    pub const fn toggle_grid_visibility(&mut self) {
         self.should_show_grid = !self.should_show_grid;
     }
 
@@ -152,8 +152,8 @@ impl Renderer {
     }
 
     /// Return a color that appropriately represents the tile.
-    /// Reference: https://ratatui.rs/examples/style/colors/
-    fn get_tile_color(&self, tile: &Tile) -> Color {
+    /// Reference: <https://ratatui.rs/examples/style/colors>/
+    const fn get_tile_color(&self, tile: &Tile) -> Color {
         match tile {
             Tile::Empty => Color::Black,
             Tile::Multiplier(_) => Color::Green,

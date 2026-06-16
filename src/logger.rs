@@ -7,7 +7,7 @@ use std::{
 
 use crate::my_error::MyError;
 
-/// Initialize env_logger, logging to a specific TTY device if provided.
+/// Initialize `env_logger`, logging to a specific TTY device if provided.
 pub fn initialize_logger(tty_path: &Option<String>) -> Result<(), MyError> {
     match tty_path {
         Some(path) => {

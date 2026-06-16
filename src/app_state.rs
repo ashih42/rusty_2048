@@ -2,7 +2,7 @@ use savefile::savefile_derive::Savefile;
 
 use crate::{game_state::GameState, grid::Grid, move_direction::MoveDirection, vector2d::Vector2D};
 
-/// AppState manages the data that make up the business logic of this game.
+/// `AppState` manages the data that make up the business logic of this game.
 #[derive(Clone, Debug, Savefile)]
 pub struct AppState {
     pub game_state: GameState,
@@ -34,7 +34,7 @@ impl AppState {
 
     /// This is used for unit testing.
     #[allow(dead_code)]
-    pub fn with_grid(grid: Grid) -> Self {
+    pub const fn with_grid(grid: Grid) -> Self {
         Self {
             game_state: GameState::InPlay,
             current_turn: 1,

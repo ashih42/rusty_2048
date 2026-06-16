@@ -4,7 +4,7 @@ use savefile::savefile_derive::Savefile;
 
 use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
-/// Grid is responsible for operations on its Tiles.
+/// `Grid`` is responsible for operations on its `Tile` instances.
 ///
 /// The x and y coordinates of tile position follows the same convention in the ratatui library.
 ///
@@ -15,7 +15,7 @@ use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 ///   y
 /// ```
 ///
-/// For example, in this map with num_rows=2, num_cols=4, '4' is at position x=2, y=0.
+/// For example, in this map with `num_rows=2`, `num_cols=4`, '4' is at position x=2, y=0.
 ///
 /// ```ignore
 /// .   .   4   .
@@ -29,7 +29,7 @@ pub struct Grid {
 }
 
 impl Grid {
-    /// Create a Grid with no tiles.
+    /// Create a `Grid` with no tiles.
     pub fn new(num_rows: usize, num_cols: usize) -> Self {
         Self {
             num_rows,
@@ -38,7 +38,7 @@ impl Grid {
         }
     }
 
-    /// Create a Grid from a string representation of all tiles.
+    /// Create a `Grid` from a string representation of all tiles.
     /// This is only used for unit testing, so it is okay to assume input string is valid and unwrap the result.
     #[allow(dead_code)]
     pub fn from_snapshot(snapshot: &str) -> Self {
@@ -47,7 +47,7 @@ impl Grid {
         let first_row = snapshot.lines().next().unwrap();
         let num_cols = first_row.split_whitespace().count();
 
-        let tiles = snapshot.split_whitespace().map(|s| s.into()).collect();
+        let tiles = snapshot.split_whitespace().map(Tile::from).collect();
 
         Self {
             num_rows,
@@ -81,11 +81,11 @@ impl Grid {
         self.tiles.swap(a_index, b_index);
     }
 
-    fn get_1d_index(&self, position: &Vector2D<usize>) -> usize {
+    const fn get_1d_index(&self, position: &Vector2D<usize>) -> usize {
         position.x + position.y * self.num_cols
     }
 
-    fn get_2d_position(&self, index: usize) -> Vector2D<usize> {
+    const fn get_2d_position(&self, index: usize) -> Vector2D<usize> {
         let x = index % self.num_cols;
         let y = index / self.num_cols;
 
@@ -102,7 +102,7 @@ impl Grid {
         let rows: Vec<&[Tile]> = self.tiles.chunks(self.num_cols).collect();
 
         rows.iter()
-            .map(|row| row.iter().map(|tile| tile.to_string()).join(" "))
+            .map(|row| row.iter().map(Tile::to_string).join(" "))
             .join("\n")
     }
 
@@ -145,7 +145,7 @@ impl Grid {
     fn get_random_empty_position(&self) -> Option<Vector2D<usize>> {
         self.collect_empty_positions()
             .choose(&mut rand::rng())
-            .cloned()
+            .copied()
     }
 
     /// If possible, choose a random empty position and creates a random tile there,
@@ -191,7 +191,7 @@ impl Grid {
     /// 1. There is no empty tile.
     /// 2. There is no possible merge anywhere.
     pub fn is_dead(&self) -> bool {
-        let has_empty_tiles = self.tiles.iter().any(|tile| tile.is_empty());
+        let has_empty_tiles = self.tiles.iter().any(Tile::is_empty);
         let is_merge_possible = self.has_possible_merges();
 
         !has_empty_tiles && !is_merge_possible
@@ -271,7 +271,7 @@ impl Grid {
 
     /// Given a `direction` enum, return a unit vector in 2D space representing the
     /// opposite direction to expand towards.
-    fn generate_direction_offset(&self, direction: MoveDirection) -> Vector2D<i8> {
+    const fn generate_direction_offset(&self, direction: MoveDirection) -> Vector2D<i8> {
         match direction {
             MoveDirection::Left => Vector2D::new(1, 0),
             MoveDirection::Right => Vector2D::new(-1, 0),
@@ -301,7 +301,7 @@ impl Grid {
     ///
     /// This implementation converts the input usize to i8 to allow signed operations,
     /// with the reasonable assumption that the grid dimensions (`num_rows` and `num_cols` from user input)
-    /// would not exceed i8::MAX.
+    /// would not exceed `i8::MAX`.
     fn generate_positional_row(
         &self,
         starting_position: &Vector2D<usize>,
@@ -320,7 +320,7 @@ impl Grid {
     }
 
     /// Check if the given position (containing signed values) is valid.
-    fn is_valid_position(&self, pos: &Vector2D<i8>) -> bool {
+    const fn is_valid_position(&self, pos: &Vector2D<i8>) -> bool {
         let num_rows = self.num_rows as i8;
         let num_cols = self.num_cols as i8;
 

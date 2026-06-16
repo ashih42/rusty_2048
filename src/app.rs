@@ -16,11 +16,11 @@ use crate::{
 const DEFAULT_SAVE_FILE_PATH: &str = "save.bin";
 const DEFAULT_OLD_STATES_STACK_CAPACITY: usize = 3;
 
-/// App is reponsible for initializing, loading, saving, and restoring its AppState,
-/// agnostic of the business logic inside AppState.
+/// `App` is reponsible for initializing, loading, saving, and restoring its `AppState`,
+/// agnostic of the business logic inside `AppState`.
 ///
-/// Also, App handles the main loop, which draws to terminal, listens for user key events, and
-/// listens for input from solver.
+/// Also, `App` handles the main loop, which draws to terminal, listens for user key events,
+/// and listens for input from solver.
 pub struct App {
     should_exit: bool,
     state: AppState,
@@ -52,7 +52,7 @@ impl App {
 
         // 4. Run app until user input to exit.
         if let Err(err) = ratatui::run(|terminal| app.run_in_ratatui(terminal)) {
-            log::error!("ratatui ran into IO error: {}", err);
+            log::error!("ratatui ran into IO error: {err}");
         }
 
         // 5. Save state to file.
@@ -60,7 +60,7 @@ impl App {
         Ok(())
     }
 
-    /// Either load an AppState from save file or create a new AppState with specific grid size.
+    /// Either load an `AppState` from save file or create a new `AppState` with specific grid size.
     fn try_build(settings: &AppSettings) -> Result<Self, MyError> {
         let state = if settings.load_from_save_file {
             Self::try_load_from_save_file(DEFAULT_SAVE_FILE_PATH)?
@@ -79,7 +79,7 @@ impl App {
         })
     }
 
-    /// Construct an AppState from save file if the file exists and is valid.
+    /// Construct an `AppState` from save file if the file exists and is valid.
     fn try_load_from_save_file(path: &str) -> Result<AppState, MyError> {
         // 1. Check if save file exists.
         match fs::exists(path) {
@@ -120,10 +120,10 @@ impl App {
         if event::poll(Duration::from_millis(100))? {
             match event::read()? {
                 Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                    self.handle_key_event(key_event)
+                    self.handle_key_event(key_event);
                 }
                 _ => (),
-            };
+            }
         }
         Ok(())
     }
@@ -139,7 +139,7 @@ impl App {
             KeyCode::Char('s') | KeyCode::Down => self.update(MoveDirection::Down),
             KeyCode::Char('a') | KeyCode::Left => self.update(MoveDirection::Left),
             KeyCode::Char('d') | KeyCode::Right => self.update(MoveDirection::Right),
-            KeyCode::Char('z') => self.toggle_ai(),
+            KeyCode::Char('z') => self.toggle_solver(),
             _ => (),
         }
     }
@@ -160,7 +160,7 @@ impl App {
         })
     }
 
-    fn exit(&mut self) {
+    const fn exit(&mut self) {
         self.should_exit = true;
     }
 
@@ -180,11 +180,11 @@ impl App {
         self.state.restart();
     }
 
-    fn toggle_grid_visibility(&mut self) {
+    const fn toggle_grid_visibility(&mut self) {
         self.renderer.toggle_grid_visibility();
     }
 
-    fn toggle_ai(&mut self) {
+    const fn toggle_solver(&mut self) {
         self.solver_enabled = !self.solver_enabled;
     }
 

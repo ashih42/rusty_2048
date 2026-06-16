@@ -6,7 +6,7 @@ use crate::{
     move_direction::{ALL_DIRECTIONS, MoveDirection},
 };
 
-/// Solver is responsible for choosing a MoveDirection, given an AppState.
+/// `Solver` is responsible for determining the best `MoveDirection`, given an `AppState`.
 /// Also, it maintains a timer so that it doesn't answer again too quickly.
 ///
 /// This implements the Strategy pattern, although currently `solve_fn`
@@ -19,7 +19,7 @@ pub struct Solver {
 
 impl Default for Solver {
     fn default() -> Self {
-        const DEFAULT_COOLDOWN: Duration = Duration::from_millis(1000);
+        const DEFAULT_COOLDOWN: Duration = Duration::from_secs(1);
 
         Self {
             solve_fn: solve_by_greedy,
@@ -34,14 +34,11 @@ impl Solver {
     pub fn is_ready(&self) -> bool {
         match self.last_solved_at {
             None => true,
-            Some(last_solved_at) => {
-                let time_since_last_solve = Instant::now() - last_solved_at;
-                time_since_last_solve > self.cooldown
-            }
+            Some(last_solved_at) => last_solved_at.elapsed() > self.cooldown,
         }
     }
 
-    /// Use the assigned `solve_fn` to find the best MoveDirection,
+    /// Use the assigned `solve_fn` to find the best `MoveDirection`,
     /// update the internal timer, and return the answer.
     pub fn solve(&mut self, state: &AppState) -> MoveDirection {
         let answer = (self.solve_fn)(state);
@@ -52,7 +49,7 @@ impl Solver {
 }
 
 #[allow(dead_code)]
-/// Randomly pick one out of 4 possible directions, not even looking at the AppState.
+/// Randomly pick one out of 4 possible directions, not even looking at the `AppState`.
 fn solve_by_random(_: &AppState) -> MoveDirection {
     ALL_DIRECTIONS.choose(&mut rand::rng()).copied().unwrap()
 }

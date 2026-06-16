@@ -8,7 +8,7 @@ pub struct Vector2D<T> {
 }
 
 impl<T> Vector2D<T> {
-    pub fn new(x: T, y: T) -> Self {
+    pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
     }
 }
@@ -16,7 +16,7 @@ impl<T> Vector2D<T> {
 impl<T: Add<Output = T>> Add for Vector2D<T> {
     type Output = Self;
     fn add(self, other: Self) -> Self::Output {
-        Vector2D::new(self.x + other.x, self.y + other.y)
+        Self::new(self.x + other.x, self.y + other.y)
     }
 }
 

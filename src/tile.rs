@@ -1,10 +1,10 @@
 use savefile::savefile_derive::Savefile;
 use std::fmt::Display;
 
-/// Note: Multiplier and Divider variants store the base 2 power (aka exponent)
+/// Note: `Multiplier` and `Divider` variants store the base 2 power (aka exponent)
 /// of the scalar multiplier value.
 ///
-/// Example: `Multiplier(3)` means multiply by 2^3, and it is displayed as `*8`.
+/// Example: `Multiplier(3)` means multiply by 2^3, or, multiply by 8.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Savefile)]
 pub enum Tile {
     Empty,
@@ -15,12 +15,12 @@ pub enum Tile {
 }
 
 impl Tile {
-    pub fn new_empty() -> Self {
+    pub const fn new_empty() -> Self {
         Self::Empty
     }
 
     /// If `value` is 0, this constructor creates an empty tile instead.
-    pub fn new_number(value: u16) -> Self {
+    pub const fn new_number(value: u16) -> Self {
         if value == 0 {
             Self::Empty
         } else {
@@ -28,23 +28,23 @@ impl Tile {
         }
     }
 
-    pub fn new_multiplier(power: u8) -> Self {
+    pub const fn new_multiplier(power: u8) -> Self {
         Self::Multiplier(power)
     }
 
-    pub fn new_divider(power: u8) -> Self {
+    pub const fn new_divider(power: u8) -> Self {
         Self::Divider(power)
     }
 
-    pub fn new_bomb() -> Self {
+    pub const fn new_bomb() -> Self {
         Self::Bomb
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
-    pub fn get_value(&self) -> Option<u16> {
+    pub const fn get_value(&self) -> Option<u16> {
         match *self {
             Self::Number(value) => Some(value),
             _ => None,
@@ -58,7 +58,7 @@ impl Tile {
     /// emojis and other unicode characters.
     pub fn as_fancy_string(&self) -> String {
         match self {
-            Self::Empty => String::from(""),
+            Self::Empty => String::new(),
             Self::Number(value) => value
                 .to_string()
                 .chars()
@@ -90,12 +90,12 @@ impl From<&str> for Tile {
         match s {
             "." => Self::new_empty(),
             "B" => Self::new_bomb(),
-            _ if s.starts_with("*") => {
+            _ if s.starts_with('*') => {
                 let scalar = s[1..].parse::<u16>().unwrap();
                 let power = scalar.ilog2() as u8;
                 Self::new_multiplier(power)
             }
-            _ if s.starts_with("/") => {
+            _ if s.starts_with('/') => {
                 let scalar = s[1..].parse::<u16>().unwrap();
                 let power = scalar.ilog2() as u8;
                 Self::new_divider(power)
@@ -113,7 +113,7 @@ impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "."),
-            Self::Number(value) => write!(f, "{}", value),
+            Self::Number(value) => write!(f, "{value}"),
             Self::Multiplier(power) => write!(f, "*{}", 2 << (power - 1)),
             Self::Divider(power) => write!(f, "/{}", 2 << (power - 1)),
             Self::Bomb => write!(f, "B"),
@@ -157,7 +157,7 @@ impl Tile {
     /// If a merge is possible, perform the merge operation,
     /// set `a` to the result, set `b` to empty, and
     /// return a score from this merge.
-    pub fn merge_tiles(a: &mut Self, b: &mut Self) -> i16 {
+    pub const fn merge_tiles(a: &mut Self, b: &mut Self) -> i16 {
         use Tile::{Bomb, Divider, Empty, Multiplier, Number};
 
         match (*a, *b) {
@@ -226,7 +226,7 @@ impl Tile {
 
     /// Calculate the result of a sum operation, and return a score,
     /// which is always positive.
-    fn calculate_sum_and_score(a_value: u16, b_value: u16) -> (u16, i16) {
+    const fn calculate_sum_and_score(a_value: u16, b_value: u16) -> (u16, i16) {
         let sum = a_value + b_value;
         let score = sum as i16;
 
@@ -235,7 +235,7 @@ impl Tile {
 
     /// Calculates the result of a multiplication operation, and return a score,
     /// which is always positive.
-    fn calculate_product_and_score(value: u16, power: u8) -> (u16, i16) {
+    const fn calculate_product_and_score(value: u16, power: u8) -> (u16, i16) {
         let product = value << power;
         let score = product as i16;
 
@@ -244,7 +244,7 @@ impl Tile {
 
     /// Calculates the result of a division operation, and return a score
     /// as a penalty value, which is always negative or 0 at best.
-    fn calculate_quotient_and_score(value: u16, power: u8) -> (u16, i16) {
+    const fn calculate_quotient_and_score(value: u16, power: u8) -> (u16, i16) {
         let quotient = value >> power;
         let score = -(quotient as i16);
 
@@ -254,7 +254,7 @@ impl Tile {
     /// Calculate the score from a bomb-merging interaction.
     /// If `other` is a number, the bomb deletes the number, and the number value is deducted as a penalty.
     /// Otherwise, the bomb deletes something else, and the score is 0.
-    fn calculate_bomb_score(other: &Tile) -> i16 {
+    const fn calculate_bomb_score(other: &Self) -> i16 {
         match other {
             Self::Number(value) => -(*value as i16),
             _ => 0,
@@ -263,7 +263,7 @@ impl Tile {
 
     /// Return a new tile from merging a multiplier and a divider tile.
     /// This result tile may be either a multiplier, divider, or empty.
-    fn merge_multiplier_and_divider(multiplier_power: u8, divider_power: u8) -> Self {
+    const fn merge_multiplier_and_divider(multiplier_power: u8, divider_power: u8) -> Self {
         if multiplier_power > divider_power {
             let resultant_power = multiplier_power - divider_power;
             Self::new_multiplier(resultant_power)
