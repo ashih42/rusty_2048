@@ -57,35 +57,21 @@ fn solve_by_random(_: &AppState) -> MoveDirection {
     ALL_DIRECTIONS.choose(&mut rand::rng()).copied().unwrap()
 }
 
-/// Try each direction, and only look at the resulting score, and if the direction won the game.
+/// Try each direction, record the resulting score, and check if the resulting grid state won the game.
+/// Return the direction that maximizes these 2 constraints, with the highest `won`, then the highest `score`.
 fn solve_by_greedy(state: &AppState) -> MoveDirection {
     // Try each direction, and record the (direction, score, won) data for each direction.
-    let trials: Vec<(MoveDirection, i16, bool)> = ALL_DIRECTIONS
+    ALL_DIRECTIONS
         .iter()
-        .map(|direction| {
+        .map(|&direction| {
             let mut grid = state.grid.clone();
-            let score = grid.update(*direction);
+            let score = grid.update(direction);
             let won = grid.contains_value(state.winning_target);
-            (*direction, score, won)
+            (direction, score, won)
         })
-        .collect();
-
-    // If there are any directions that won the game, select one among them that produced the highest score.
-    if let Some(winner) = trials
-        .iter()
-        .filter(|(_, _, won)| *won)
-        .max_by(|(_, a_score, _), (_, b_score, _)| a_score.cmp(b_score))
-    {
-        return winner.0;
-    }
-
-    // Otherwise, select one among all directions that produced the highest score.
-    let winner = trials
-        .iter()
-        .max_by(|(_, a_score, _), (_, b_score, _)| a_score.cmp(b_score))
-        .unwrap();
-
-    winner.0
+        .max_by_key(|&(_, score, won)| (won, score))
+        .map(|(direction, ..)| direction)
+        .unwrap()
 }
 
 #[cfg(test)]
