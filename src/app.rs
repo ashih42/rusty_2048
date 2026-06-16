@@ -34,6 +34,11 @@ pub struct App {
 impl App {
     /// If user provided help flag, simply print usage and exit.
     /// Otherwise, create an app instance and run.
+    ///
+    /// # Errors
+    ///
+    /// This function will return `MyError` if user provided invalid command line arguments,
+    /// if logger could not be initialized for the TTY, or if app failed to build from save file.
     pub fn run() -> Result<(), MyError> {
         // 1. Parse settings from command line arguments.
         let settings = AppSettings::try_from_command_line()?;
@@ -45,7 +50,7 @@ impl App {
         }
 
         // 2. Initialize logger.
-        logger::initialize_logger(&settings.tty_path)?;
+        logger::initialize_logger(settings.tty_path.as_ref())?;
 
         // 3. Build app.
         let mut app = Self::try_build(&settings)?;

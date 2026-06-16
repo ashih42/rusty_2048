@@ -89,9 +89,9 @@ impl AppState {
 
     /// Update both `current_score` and `best_score`.
     fn update_scores(&mut self, score: i16) {
-        let updated_score = (self.current_score as i16) + score;
+        let updated_score = self.current_score.cast_signed() + score;
         let updated_score = updated_score.clamp(0, i16::MAX);
-        self.current_score = updated_score as u16;
+        self.current_score = updated_score.cast_unsigned();
 
         if self.current_score > self.best_score {
             self.best_score = self.current_score;

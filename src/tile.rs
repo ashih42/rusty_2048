@@ -40,10 +40,12 @@ impl Tile {
         Self::Bomb
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub const fn get_value(&self) -> Option<u16> {
         match *self {
             Self::Number(value) => Some(value),
@@ -56,6 +58,7 @@ impl Tile {
 impl Tile {
     /// Return a fancy string representation of the tile, which may include
     /// emojis and other unicode characters.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn as_fancy_string(&self) -> String {
         match self {
             Self::Empty => String::new(),
@@ -83,9 +86,11 @@ impl Tile {
     }
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<&str> for Tile {
     /// Construct a tile from a string containing only ascii characters.
     /// This is only used for unit-testing, so it is okay to assume input string is valid and unwrap the result.
+    #[allow(clippy::cast_possible_truncation)]
     fn from(s: &str) -> Self {
         match s {
             "." => Self::new_empty(),
@@ -124,9 +129,11 @@ impl Display for Tile {
 /// These operations are for resolving the merging of 2 adjacent tiles.
 impl Tile {
     /// Checks if the given 2 tiles can be merged.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn are_mergeable(a: &Self, b: &Self) -> bool {
         use Tile::{Bomb, Divider, Empty, Multiplier, Number};
 
+        #[allow(clippy::match_same_arms)]
         match (a, b) {
             // No merge if either tile is empty.
             (Empty, _) | (_, Empty) => false,
@@ -228,7 +235,7 @@ impl Tile {
     /// which is always positive.
     const fn calculate_sum_and_score(a_value: u16, b_value: u16) -> (u16, i16) {
         let sum = a_value + b_value;
-        let score = sum as i16;
+        let score = sum.cast_signed();
 
         (sum, score)
     }
@@ -237,7 +244,7 @@ impl Tile {
     /// which is always positive.
     const fn calculate_product_and_score(value: u16, power: u8) -> (u16, i16) {
         let product = value << power;
-        let score = product as i16;
+        let score = product.cast_signed();
 
         (product, score)
     }
@@ -246,7 +253,7 @@ impl Tile {
     /// as a penalty value, which is always negative or 0 at best.
     const fn calculate_quotient_and_score(value: u16, power: u8) -> (u16, i16) {
         let quotient = value >> power;
-        let score = -(quotient as i16);
+        let score = -quotient.cast_signed();
 
         (quotient, score)
     }
@@ -254,9 +261,10 @@ impl Tile {
     /// Calculate the score from a bomb-merging interaction.
     /// If `other` is a number, the bomb deletes the number, and the number value is deducted as a penalty.
     /// Otherwise, the bomb deletes something else, and the score is 0.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     const fn calculate_bomb_score(other: &Self) -> i16 {
         match other {
-            Self::Number(value) => -(*value as i16),
+            Self::Number(value) => -value.cast_signed(),
             _ => 0,
         }
     }

@@ -32,10 +32,8 @@ impl Default for Solver {
 impl Solver {
     /// Wait for a fixed amount of time since last solve.
     pub fn is_ready(&self) -> bool {
-        match self.last_solved_at {
-            None => true,
-            Some(last_solved_at) => last_solved_at.elapsed() > self.cooldown,
-        }
+        self.last_solved_at
+            .is_none_or(|timestamp| timestamp.elapsed() > self.cooldown)
     }
 
     /// Use the assigned `solve_fn` to find the best `MoveDirection`,

@@ -33,6 +33,10 @@ impl Default for AppSettings {
 
 impl AppSettings {
     /// This constructor may fail if given invalid arguments.
+    ///
+    /// # Errors
+    ///
+    /// This function will return `MyError` if any one command line argument is invalid.
     pub fn try_from_command_line() -> Result<Self, MyError> {
         let mut settings = Self::default();
 

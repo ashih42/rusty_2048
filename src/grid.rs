@@ -4,7 +4,7 @@ use savefile::savefile_derive::Savefile;
 
 use crate::{move_direction::MoveDirection, tile::Tile, vector2d::Vector2D};
 
-/// `Grid`` is responsible for operations on its `Tile` instances.
+/// `Grid` is responsible for operations on its `Tile` instances.
 ///
 /// The x and y coordinates of tile position follows the same convention in the ratatui library.
 ///
@@ -157,7 +157,7 @@ impl Grid {
     /// - 10% chance to create a divider, with 1 <= power <= 3.
     /// - 10% chance to create a bomb.
     pub fn spawn_random_tile_at_random_location(&mut self) -> Option<Vector2D<usize>> {
-        if let Some(position) = self.get_random_empty_position() {
+        self.get_random_empty_position().inspect(|position| {
             let x = rand::random_range(0..100);
             let power = rand::random_range(1..=3);
 
@@ -171,11 +171,8 @@ impl Grid {
                 Tile::new_bomb()
             };
 
-            self.set_tile(&position, tile);
-            Some(position)
-        } else {
-            None
-        }
+            self.set_tile(position, tile);
+        })
     }
 
     /// Check if a tile with the given value exists.
@@ -271,7 +268,7 @@ impl Grid {
 
     /// Given a `direction` enum, return a unit vector in 2D space representing the
     /// opposite direction to expand towards.
-    const fn generate_direction_offset(&self, direction: MoveDirection) -> Vector2D<i8> {
+    const fn generate_direction_offset(direction: MoveDirection) -> Vector2D<i8> {
         match direction {
             MoveDirection::Left => Vector2D::new(1, 0),
             MoveDirection::Right => Vector2D::new(-1, 0),
@@ -287,7 +284,7 @@ impl Grid {
     /// the first item in the vector corresponds to the first (leftmost) item in a physical horizontal row.
     fn generate_positional_rows(&self, direction: MoveDirection) -> Vec<Vec<Vector2D<usize>>> {
         let starting_positions = self.generate_starting_positions(direction);
-        let offset = self.generate_direction_offset(direction);
+        let offset = Self::generate_direction_offset(direction);
 
         starting_positions
             .iter()
@@ -308,10 +305,14 @@ impl Grid {
         offset: Vector2D<i8>,
     ) -> Vec<Vector2D<usize>> {
         let mut row = vec![];
+
+        #[allow(clippy::cast_possible_truncation)]
         let mut pos = Vector2D::new(starting_position.x as i8, starting_position.y as i8);
 
-        while self.is_valid_position(&pos) {
+        while self.is_valid_position(pos) {
+            #[allow(clippy::cast_sign_loss)]
             let valid_position = Vector2D::new(pos.x as usize, pos.y as usize);
+
             row.push(valid_position);
             pos += offset;
         }
@@ -320,8 +321,11 @@ impl Grid {
     }
 
     /// Check if the given position (containing signed values) is valid.
-    const fn is_valid_position(&self, pos: &Vector2D<i8>) -> bool {
+    const fn is_valid_position(&self, pos: Vector2D<i8>) -> bool {
+        #[allow(clippy::cast_possible_truncation)]
         let num_rows = self.num_rows as i8;
+
+        #[allow(clippy::cast_possible_truncation)]
         let num_cols = self.num_cols as i8;
 
         0 <= pos.x && pos.x < num_cols && 0 <= pos.y && pos.y < num_rows

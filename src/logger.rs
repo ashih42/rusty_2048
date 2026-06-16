@@ -8,7 +8,7 @@ use std::{
 use crate::my_error::MyError;
 
 /// Initialize `env_logger`, logging to a specific TTY device if provided.
-pub fn initialize_logger(tty_path: &Option<String>) -> Result<(), MyError> {
+pub fn initialize_logger(tty_path: Option<&String>) -> Result<(), MyError> {
     match tty_path {
         Some(path) => {
             if !is_valid_tty(path) {
@@ -45,14 +45,9 @@ fn is_valid_tty(path_str: &str) -> bool {
 
     // 2. Open the file in a non-blocking or standard read/write mode,
     // using OpenOptions to avoid blocking on certain physical TTY lines.
-    match OpenOptions::new().read(true).write(true).open(path) {
-        Ok(file) => {
-            // 3. Verify the file descriptor represents a TTY terminal.
-            file.is_terminal()
-        }
-        Err(_) => {
-            // Path exists, but cannot open it (e.g., Permission Denied).
-            false
-        }
-    }
+    OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .is_ok_and(|file| file.is_terminal())
 }

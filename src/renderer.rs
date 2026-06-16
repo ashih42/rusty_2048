@@ -30,21 +30,21 @@ impl Renderer {
     /// Update the terminal display with the current state.
     pub fn render(&self, frame: &mut Frame, state: &AppState) {
         // 1. Split screen into areas.
-        let (total_area, banner_area, grid_area) = self.split_areas(frame);
+        let (total_area, banner_area, grid_area) = Self::split_areas(frame);
 
         // 2. Render the top banner.
-        self.render_banner(frame, banner_area, state);
+        Self::render_banner(frame, banner_area, state);
 
         // 3. Render the grid inside the remaining bottom area.
         self.render_grid(frame, grid_area, state);
 
         // 4. Render the game-over popup box overlay.
-        self.render_game_over_popup(frame, total_area, state);
+        Self::render_game_over_popup(frame, total_area, state);
     }
 
     /// Split the entire terminal screen space into a thin top banner area, and let the large remaining bottom area
     /// be the grid area.  Return 3 areas: the total area, the bannera area, and the grid area.
-    fn split_areas(&self, frame: &Frame) -> (Rect, Rect, Rect) {
+    fn split_areas(frame: &Frame) -> (Rect, Rect, Rect) {
         let total_area = frame.area();
 
         let main_chunks = Layout::default()
@@ -62,7 +62,7 @@ impl Renderer {
     }
 
     /// Draw the banner area, showing the current turn, current score, and highest score.
-    fn render_banner(&self, frame: &mut Frame, banner_area: Rect, state: &AppState) {
+    fn render_banner(frame: &mut Frame, banner_area: Rect, state: &AppState) {
         let banner_text = format!(
             " Turn: {}    |    Score: {}    |    High Score: {} ",
             state.current_turn, state.current_score, state.best_score,
@@ -86,6 +86,7 @@ impl Renderer {
         let (num_rows, num_cols) = (state.grid.num_rows, state.grid.num_cols);
 
         // Split grid_area into rows.
+        #[allow(clippy::cast_possible_truncation)]
         let row_constraints = (0..num_rows).map(|_| Constraint::Ratio(1, num_rows as u32));
         let rows = Layout::default()
             .direction(Direction::Vertical)
@@ -94,6 +95,7 @@ impl Renderer {
 
         for row_idx in 0..num_rows {
             // Split each row into columns.
+            #[allow(clippy::cast_possible_truncation)]
             let col_constraints = (0..num_cols).map(|_| Constraint::Ratio(1, num_cols as u32));
             let columns = Layout::default()
                 .direction(Direction::Horizontal)
@@ -107,16 +109,16 @@ impl Renderer {
                 let tile = state.grid.get_tile(&position);
                 let is_new_tile = state.new_tile_positions.contains(&position);
 
-                self.render_tile(frame, area, tile, is_new_tile);
+                self.render_tile(frame, area, *tile, is_new_tile);
             }
         }
     }
 
     /// Draw one specific tile.
-    fn render_tile(&self, frame: &mut Frame, area: Rect, tile: &Tile, is_new_tile: bool) {
+    fn render_tile(&self, frame: &mut Frame, area: Rect, tile: Tile, is_new_tile: bool) {
         // 1. Draw the tile with solid filled color and a border if set by user.
         let container = Block::default()
-            .style(Style::default().bg(self.get_tile_color(tile)))
+            .style(Style::default().bg(Self::get_tile_color(tile)))
             .borders(if self.should_show_grid {
                 Borders::ALL
             } else {
@@ -153,12 +155,11 @@ impl Renderer {
 
     /// Return a color that appropriately represents the tile.
     /// Reference: <https://ratatui.rs/examples/style/colors>/
-    const fn get_tile_color(&self, tile: &Tile) -> Color {
+    const fn get_tile_color(tile: Tile) -> Color {
         match tile {
             Tile::Empty => Color::Black,
             Tile::Multiplier(_) => Color::Green,
-            Tile::Divider(_) => Color::Red,
-            Tile::Bomb => Color::Red,
+            Tile::Divider(_) | Tile::Bomb => Color::Red,
             Tile::Number(1) => Color::Indexed(8),
             Tile::Number(2) => Color::Indexed(3),
             Tile::Number(4) => Color::Indexed(4),
@@ -177,21 +178,21 @@ impl Renderer {
 
     /// Get a cached string representation for the tile.
     /// If not found, update the cache, and then return the cached string.
-    fn get_tile_str(&self, tile: &Tile) -> &str {
-        if let Some(s) = self.tile_string_cache.get(tile) {
+    fn get_tile_str(&self, tile: Tile) -> &str {
+        if let Some(s) = self.tile_string_cache.get(&tile) {
             return s;
         }
 
         self.tile_string_cache
-            .insert(*tile, tile.as_fancy_string().into())
+            .insert(tile, tile.as_fancy_string().into())
     }
 
     /// Draw a popup window that shows a victory or defeat message.
-    fn render_game_over_popup(&self, frame: &mut Frame, total_area: Rect, state: &AppState) {
+    fn render_game_over_popup(frame: &mut Frame, total_area: Rect, state: &AppState) {
         if matches!(state.game_state, GameState::Won | GameState::Lost) {
             // Render the centered "YOU WIN" popup box overlay
             // Set size parameters for the popup box (30 columns wide, 6 rows high)
-            let popup_area = self.centered_rect(30, 6, total_area);
+            let popup_area = Self::centered_rect(30, 6, total_area);
 
             // Clear widget removes any underlying characters from the grid underneath
             frame.render_widget(Clear, popup_area);
@@ -231,7 +232,7 @@ impl Renderer {
     }
 
     /// Helper function to build a centered bounding box geometry overlay
-    fn centered_rect(&self, width: u16, height: u16, r: Rect) -> Rect {
+    fn centered_rect(width: u16, height: u16, r: Rect) -> Rect {
         let popup_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
