@@ -1,3 +1,6 @@
+/// This data structure provides operations on a stack with a fixed capacity such that push is O(n), pop is O(1).
+/// The inefficient O(n) push is acceptable since n is small, and since this vector implementation allocates memory
+/// only once, it is much preferred over a linked list implementation.
 #[derive(Debug)]
 pub struct BoundedStack<T> {
     items: Vec<T>,
